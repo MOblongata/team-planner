@@ -628,27 +628,40 @@ function vzwPerMaandMixed(p){
   const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
   const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct();
   let tot=0;
-  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const afd=getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*afd*wk;}
-  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;const afd=getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*afd;}
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;if((act.routing||'afdracht')!=='afdracht')continue;const afd=getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*afd*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;if((act.routing||'afdracht')!=='afdracht')continue;const afd=getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*afd;}
   return tot;
 }
 function persNettoMixed(p){
   const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
   const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct();
   let tot=0;
-  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const pers=1-getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*pers*wk;}
-  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;const pers=1-getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*pers;}
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;if((act.routing||'afdracht')!=='afdracht')continue;const pers=1-getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*pers*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;if((act.routing||'afdracht')!=='afdracht')continue;const pers=1-getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*pers;}
+  return tot;
+}
+function mixCappIncome(){
+  // Bijdrage aan ☕ pool vanuit consultatie/technische acts met routing='cappuccino'
+  let tot=0;
+  const oh=ohPct();
+  for(const p of team){
+    const dd=dagdelen(p),wk=wkPerMaand(p);
+    if(!dd)continue;
+    const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
+    for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;if((act.routing||'afdracht')!=='cappuccino')continue;tot+=dd*(+m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*wk;}
+    for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;if((act.routing||'afdracht')!=='cappuccino')continue;tot+=cnt*dd*wk*act.tarief;}
+  }
   return tot;
 }
 function vzwActual(p){return(personMix[p.id]||[]).length>0?vzwPerMaandMixed(p):vzwPerMaand(p);}
 function nettoActual(p){return(personMix[p.id]||[]).length>0?persNettoMixed(p):persNettoPerMaand(p);}
 function brutoEurPerBlok(p){
-  // Bruto-tariefopbrengst per blok (vóór afdracht-%, ná overhead). Gewogen mix of standaard.
+  // Bruto-tariefopbrengst per blok van acts met routing='afdracht' (vóór afdracht-%, ná overhead).
   const oh=ohPct();
   const mix=personMix[p.id]||[];
   if(mix.length>0){
     let tot=0;
-    for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=(+m.pct/100)*cpbForAct(act)*act.tarief;}
+    for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;if((act.routing||'afdracht')!=='afdracht')continue;tot+=(+m.pct/100)*cpbForAct(act)*act.tarief;}
     return tot*(1-oh);
   }
   return(p.tarief||0)*(p.cons||0)*(1-oh);
@@ -718,7 +731,7 @@ function mdoDeelnemers(day,s,e){
 function mdoSlotInBooking(day,h){return mdoBookings.find(b=>b.day===day&&h>=b.startHour&&h<b.startHour+b.durationHours);}
 function adminCappIncome(){let t=0;for(const[,am]of Object.entries(personAdmin)){for(const[aId,pm]of Object.entries(am)){const act=acts.find(a=>a.id===aId);if(act&&pm)t+=act.tarief*pm;}}return t;}
 function avondCappIncome(){let t=0;for(const p of team){const av=personAvond[p.id]||{};for(const[aId,r]of Object.entries(av)){if(r!=='cappuccino')continue;const act=acts.find(a=>a.id===aId);if(act)t+=avondDelen(p)*wkPerMaand(p)*act.tarief;}}return t;}
-function cappPool(){const om=document.getElementById('capp-overschot-manual')?.value;if(om&&om!=='')return Math.max(0,+om||0);return Math.max(0,totalVzw()-totalKosten())+mdoCappIncome()+mdoBlokIncome()+adminCappIncome()+avondCappIncome();}
+function cappPool(){const om=document.getElementById('capp-overschot-manual')?.value;if(om&&om!=='')return Math.max(0,+om||0);return Math.max(0,totalVzw()-totalKosten())+mdoCappIncome()+mdoBlokIncome()+adminCappIncome()+avondCappIncome()+mixCappIncome();}
 
 function calcCapp(){
   const pool=cappPool(),dln=team.filter(p=>isCappOptIn(p)&&dagdelen(p)>0);
@@ -1064,7 +1077,7 @@ function renderOverleg(){
 }
 
 function renderCapp(){
-  const vzwInk=totalVzw(),kost=totalKosten(),overschot=vzwInk-kost,surplus=Math.max(0,overschot),mdo=mdoCappIncome(),mdoBlk=mdoBlokIncome(),adm=adminCappIncome(),av=avondCappIncome(),pool=cappPool();
+  const vzwInk=totalVzw(),kost=totalKosten(),overschot=vzwInk-kost,surplus=Math.max(0,overschot),mdo=mdoCappIncome(),mdoBlk=mdoBlokIncome(),adm=adminCappIncome(),av=avondCappIncome(),mixCp=mixCappIncome(),pool=cappPool();
   const bd=document.getElementById('capp-pool-breakdown');
   if(bd){
     let bh='<div style="background:#f9fafb;border-radius:8px;padding:10px;font-size:12px">';
@@ -1076,6 +1089,7 @@ function renderCapp(){
     if(mdo>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ MDO losse acts</span><strong>'+fmt(mdo)+'</strong></div>';
     if(adm>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Admin kosten</span><strong>'+fmt(adm)+'</strong></div>';
     if(av>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Avondtoeslag → ☕</span><strong>'+fmt(av)+'</strong></div>';
+    if(mixCp>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Mix-acts → ☕ pool</span><strong>'+fmt(mixCp)+'</strong></div>';
     bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:'+(pool>0?'#059669':'#dc2626')+'"><span>Totaal pool</span><span>'+fmt(pool)+(pool<=0?' ⚠️':'')+'</span></div></div>';
     bd.innerHTML=bh;
   }
