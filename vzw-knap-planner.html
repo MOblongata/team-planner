@@ -329,6 +329,14 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
 
 <div id="tab-capp" class="tab-pane">
   <div class="card">
+    <div class="card-title">☕ Pool-instellingen</div>
+    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12.5px">
+      <input type="checkbox" id="capp-kostendekking" onchange="toggleCappKostendekking(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#7c3aed;margin-top:2px;flex-shrink:0">
+      <span><strong>Pool gebruiken om VZW-tekort te dekken</strong> — wanneer aan: als de VZW-afdrachten de maandkosten niet dekken, gaan de pool-bronnen (MDO, Admin, Mix-acts → ☕, ...) eerst naar het dichten van het tekort. Pas het saldo dat overblijft wordt verdeeld in de pool.</span>
+    </label>
+    <p class="note" id="capp-kostendekking-status" style="margin-top:6px"></p>
+  </div>
+  <div class="card">
     <div class="card-title">☕ Pool &amp; Laagverdeling</div>
     <div id="capp-pool-breakdown" style="margin-bottom:12px"></div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -451,6 +459,7 @@ let mdoBookings=[]; // [{id, day:0-4, startHour:float (uren sinds middernacht), 
 let mdoBlokken={}; // {pid: aantalMDOsPerWeek} — aantal MDO-sessies/cliëntbesprekingen per week per teamlid
 let cappOptIn={}; // {pid: true/false} — deelname aan cappuccinopool. Default true voor zelfstandigen.
 let overlegOhActief=true; // wanneer uit: overhead wordt op 0 gezet in alle berekeningen (Fin, Mix, Capp, ...).
+let cappKostendekking=false; // wanneer aan: pool-bronnen dekken eerst VZW-tekort vooraleer pool gevormd wordt
 let personActPct={}; // {pid:{actId:pct}} — per persoon override-afdracht% per specifieke act
 let finExpanded={}; // {pid:true} — UI-state: welke teamleden hebben hun sub-rijen open
 let acts=DEFAULT_ACTS.map(a=>({...a}));
@@ -514,7 +523,7 @@ function copyJSON(){const ta=document.getElementById('modal-json');ta.select();t
 
 function getOverlegFromDOM(){const g=id=>+(document.getElementById(id)?.value)||0;return{opstart:g('p-opstart')||15,ntraject:g('p-ntraject')||2,mintraject:g('p-mintraject')||15,mdofreq:g('p-mdofreq')||5,mdomin:g('p-mdomin')||15,trajlen:g('p-trajlen')||20,consdur:g('p-consdur')||60};}
 function getCappFromDOM(){return{pctL1:+(document.getElementById('capp-pct-l1')?.value)||30,pctL2:+(document.getElementById('capp-pct-l2')?.value)||30,pctL3:+(document.getElementById('capp-pct-l3')?.value)||20,pctL4cap:+(document.getElementById('capp-pct-l4cap')?.value)||20,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
-function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief,personActPct:JSON.parse(JSON.stringify(personActPct))};}
+function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief,cappKostendekking:cappKostendekking,personActPct:JSON.parse(JSON.stringify(personActPct))};}
 function applyState(st){
   team=(st.team||DEFAULT_TEAM.map(p=>({...p}))).map(p=>({type:'zelfstandige',...p}));
   slots=st.slots||{};team.forEach(p=>{if(!slots[p.id])slots[p.id]=mkDef();});
@@ -545,6 +554,7 @@ function applyState(st){
   mdoBlokken=st.mdoBlokken||{};
   cappOptIn=st.cappOptIn||{};
   overlegOhActief=st.overlegOhActief!==undefined?!!st.overlegOhActief:true;
+  cappKostendekking=st.cappKostendekking!==undefined?!!st.cappKostendekking:false;
   personActPct=st.personActPct||{};
   const ov={...DEFAULT_OVERLEG,...(st.overleg||{})};
   Object.entries(ov).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});
@@ -559,7 +569,7 @@ function setStatus(t,c){const el=document.getElementById('save-status');if(el){e
 function onAnyChange(){lsAutoSave();setStatus('✓ Opgeslagen','saved');}
 function exportJSON(){document.getElementById('modal-json').value=JSON.stringify(buildState(),null,2);openModal();}
 function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{applyState(JSON.parse(e.target.result));refreshAll();lsAutoSave();setStatus('✓ Geladen','saved');}catch(err){alert('Fout: '+err.message);}};r.readAsText(f);inp.value='';}
-function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;personActPct={};finExpanded={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
+function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;cappKostendekking=false;personActPct={};finExpanded={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
 
 function clr(i){return COLORS[i%COLORS.length];}
 function fmt(n){return'€\u202F'+Math.round(n).toLocaleString('nl-BE');}
@@ -731,7 +741,18 @@ function mdoDeelnemers(day,s,e){
 function mdoSlotInBooking(day,h){return mdoBookings.find(b=>b.day===day&&h>=b.startHour&&h<b.startHour+b.durationHours);}
 function adminCappIncome(){let t=0;for(const[,am]of Object.entries(personAdmin)){for(const[aId,pm]of Object.entries(am)){const act=acts.find(a=>a.id===aId);if(act&&pm)t+=act.tarief*pm;}}return t;}
 function avondCappIncome(){let t=0;for(const p of team){const av=personAvond[p.id]||{};for(const[aId,r]of Object.entries(av)){if(r!=='cappuccino')continue;const act=acts.find(a=>a.id===aId);if(act)t+=avondDelen(p)*wkPerMaand(p)*act.tarief;}}return t;}
-function cappPool(){const om=document.getElementById('capp-overschot-manual')?.value;if(om&&om!=='')return Math.max(0,+om||0);return Math.max(0,totalVzw()-totalKosten())+mdoCappIncome()+mdoBlokIncome()+adminCappIncome()+avondCappIncome()+mixCappIncome();}
+function cappPool(){
+  const om=document.getElementById('capp-overschot-manual')?.value;
+  if(om&&om!=='')return Math.max(0,+om||0);
+  const vzwOverschot=totalVzw()-totalKosten();
+  const bronnen=mdoCappIncome()+mdoBlokIncome()+adminCappIncome()+avondCappIncome()+mixCappIncome();
+  if(cappKostendekking){
+    // Pool-bronnen dekken eerst VZW-tekort; rest vormt de pool. Bij positief overschot telt dat ook mee als bron.
+    return Math.max(0,vzwOverschot+bronnen);
+  }
+  // Klassiek: tekort afgekapt, bronnen gaan los naar pool
+  return Math.max(0,vzwOverschot)+bronnen;
+}
 
 function calcCapp(){
   const pool=cappPool(),dln=team.filter(p=>isCappOptIn(p)&&dagdelen(p)>0);
@@ -1077,19 +1098,41 @@ function renderOverleg(){
 }
 
 function renderCapp(){
-  const vzwInk=totalVzw(),kost=totalKosten(),overschot=vzwInk-kost,surplus=Math.max(0,overschot),mdo=mdoCappIncome(),mdoBlk=mdoBlokIncome(),adm=adminCappIncome(),av=avondCappIncome(),mixCp=mixCappIncome(),pool=cappPool();
+  const vzwInk=totalVzw(),kost=totalKosten(),overschot=vzwInk-kost,mdo=mdoCappIncome(),mdoBlk=mdoBlokIncome(),adm=adminCappIncome(),av=avondCappIncome(),mixCp=mixCappIncome(),pool=cappPool();
+  const bronnen=mdo+mdoBlk+adm+av+mixCp;
+  // Sync kostendekking checkbox & status
+  const cbKost=document.getElementById('capp-kostendekking');if(cbKost)cbKost.checked=cappKostendekking;
+  const stKost=document.getElementById('capp-kostendekking-status');
+  if(stKost){
+    if(cappKostendekking){
+      if(overschot<0&&bronnen>0){
+        const dekking=Math.min(bronnen,-overschot);
+        stKost.innerHTML='<span style="color:#7c3aed;font-weight:600">✓ Actief</span> — pool-bronnen dekken nu <strong>'+fmt(dekking)+'</strong> van het VZW-tekort.';
+      } else if(overschot>=0){
+        stKost.innerHTML='<span style="color:#059669;font-weight:600">✓ Actief</span> — geen tekort, alle bronnen vloeien naar de pool.';
+      } else {
+        stKost.innerHTML='<span style="color:#7c3aed;font-weight:600">✓ Actief</span> — geen pool-bronnen beschikbaar om tekort te dekken.';
+      }
+    } else {
+      stKost.innerHTML='<span style="color:#9ca3af;font-weight:600">⊘ Uit</span> — VZW-tekort wordt niet uit de pool gedekt (klassieke scheiding).';
+    }
+  }
   const bd=document.getElementById('capp-pool-breakdown');
   if(bd){
     let bh='<div style="background:#f9fafb;border-radius:8px;padding:10px;font-size:12px">';
     bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>VZW afdrachten/inkomsten</span><strong style="color:#1a1a1a">'+fmt(vzwInk)+'</strong></div>';
     bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>− VZW kosten</span><strong style="color:#1a1a1a">'+fmt(kost)+'</strong></div>';
     bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:1px dashed #e5e7eb;font-weight:700;color:'+(overschot>=0?'#059669':'#dc2626')+'"><span>= VZW overschot</span><span>'+(overschot>=0?'+':'')+fmt(overschot)+(overschot<0?' ⚠️':'')+'</span></div>';
-    if(overschot<0)bh+='<div style="font-size:10.5px;color:#dc2626;padding:2px 0 0;font-style:italic">⚠️ Tekort wordt niet bijgedragen aan pool (afgekapt op €0)</div>';
+    if(overschot<0&&!cappKostendekking)bh+='<div style="font-size:10.5px;color:#dc2626;padding:2px 0 0;font-style:italic">⚠️ Tekort wordt niet bijgedragen aan pool (afgekapt op €0). Schakel "Pool dekt tekort" in om dit te corrigeren.</div>';
     if(mdoBlk>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ 🗣 MDO-blokken</span><strong>'+fmt(mdoBlk)+'</strong></div>';
     if(mdo>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ MDO losse acts</span><strong>'+fmt(mdo)+'</strong></div>';
     if(adm>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Admin kosten</span><strong>'+fmt(adm)+'</strong></div>';
     if(av>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Avondtoeslag → ☕</span><strong>'+fmt(av)+'</strong></div>';
     if(mixCp>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Mix-acts → ☕ pool</span><strong>'+fmt(mixCp)+'</strong></div>';
+    if(cappKostendekking&&overschot<0&&bronnen>0){
+      const dekking=Math.min(bronnen,-overschot);
+      bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#b45309;font-style:italic"><span>− Pool dekt VZW-tekort</span><strong>-'+fmt(dekking)+'</strong></div>';
+    }
     bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:'+(pool>0?'#059669':'#dc2626')+'"><span>Totaal pool</span><span>'+fmt(pool)+(pool<=0?' ⚠️':'')+'</span></div></div>';
     bd.innerHTML=bh;
   }
@@ -1317,6 +1360,7 @@ function setRatioSlider(pid,ratio){
   onAnyChange();
 }
 function onCappChange(){renderCapp();onAnyChange();}
+function toggleCappKostendekking(active){cappKostendekking=!!active;renderCapp();renderFin();onAnyChange();}
 function toggleSlot(pid,di,bi){if(!slots[pid])slots[pid]=mkDef();slots[pid][di][bi]=!slots[pid][di][bi];renderRooster();renderFin();renderCapp();renderMix();renderCap();onAnyChange();}
 function addPersoon(){const n=document.getElementById('nh-naam').value.trim();if(!n)return;const id=nextId('tp'),t=document.getElementById('nh-type').value||'zelfstandige';const pctStr=document.getElementById('nh-pct').value;const pct=pctStr===''||pctStr==null?20:+pctStr;team.push({id,naam:n,type:t,tarief:+document.getElementById('nh-tarief').value||80,cons:+document.getElementById('nh-cons').value||4,pct:pct,wkjr:+document.getElementById('nh-wkjr').value||46});slots[id]=mkDef();['nh-naam','nh-tarief','nh-cons','nh-pct','nh-wkjr'].forEach(x=>document.getElementById(x).value='');refreshAll();onAnyChange();}
 function delPersoon(id){team=team.filter(p=>p.id!==id);delete slots[id];delete personMandaten[id];delete werkelijkeCons[id];delete personMix[id];delete personTechnisch[id];delete personMDO[id];delete personAdmin[id];delete personAvond[id];delete mdoBlokken[id];delete cappOptIn[id];delete personActPct[id];delete finExpanded[id];refreshAll();onAnyChange();}
