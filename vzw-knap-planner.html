@@ -784,8 +784,10 @@ function calcCapp(){
   const dd=dln.map(p=>dagdelen(p)),totDD=dd.reduce((s,x)=>s+x,0);
   const L1=dd.map(x=>totDD?(x/totDD)*pL1*pool:0);
   const verwacht=dln.map(p=>dagdelen(p)*p.cons*wkPerMaand(p)),werkelijk=dln.map(p=>+(werkelijkeCons[p.id]||0));
-  const ratios=dln.map((p,i)=>verwacht[i]?Math.min(werkelijk[i]/verwacht[i],1.25):0),totRatio=ratios.reduce((s,r)=>s+r,0);
-  const L2=ratios.map(r=>totRatio?(r/totRatio)*pL2*pool:0);
+  const ratios=dln.map((p,i)=>verwacht[i]?Math.min(werkelijk[i]/verwacht[i],1.25):0);
+  // L2 = werkelijk geleverde consultaties (= verwacht × ratio). Zo schaalt L2 mee met werkomvang.
+  const l2pts=dln.map((_,i)=>verwacht[i]*ratios[i]),totL2pts=l2pts.reduce((s,x)=>s+x,0);
+  const L2=l2pts.map(x=>totL2pts?(x/totL2pts)*pL2*pool:0);
   const mp=dln.map(p=>(personMandaten[p.id]||[]).reduce((s,mid)=>{const m=mandaten.find(x=>x.id===mid);return s+(m?+m.punten:0);},0)),totMP=mp.reduce((s,x)=>s+x,0);
   const L3=mp.map(x=>totMP?(x/totMP)*pL3*pool:0);
   const op=dln.map(p=>(personOpleiding[p.id]||[]).reduce((s,oid)=>{const o=opleidingen.find(x=>x.id===oid);return s+(o?+o.punten:0);},0)),totOP=op.reduce((s,x)=>s+x,0);
@@ -1257,7 +1259,7 @@ function renderCapp(){
   h+='<table><thead><tr><th>Naam</th><th style="text-align:right;color:#7c3aed">L1</th><th style="text-align:right;color:#2563eb">L2</th><th style="text-align:right;color:#d97706">L3</th><th style="text-align:right;color:#c2410c">L4</th><th style="text-align:right">Totaal</th><th style="text-align:right">%</th></tr></thead><tbody>';
   dln.forEach((p,i)=>{const pct=totPool?totals[i]/totPool:0;h+='<tr><td style="font-weight:500">'+p.naam+'</td><td style="text-align:right;color:#7c3aed">'+fmt(L1[i])+'</td><td style="text-align:right;color:#2563eb">'+fmt(L2[i])+'</td><td style="text-align:right;color:#d97706">'+fmt(L3[i])+'</td><td style="text-align:right;color:#c2410c">'+fmt(L4[i])+'</td><td style="text-align:right;font-weight:700">'+fmt(totals[i])+'</td><td style="text-align:right;color:#6b7280">'+(pct*100).toFixed(1)+'%</td></tr>';});
   h+='<tr style="border-top:2px solid #e5e7eb;font-weight:700"><td>Totaal</td><td style="text-align:right;color:#7c3aed">'+fmt(L1.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#2563eb">'+fmt(L2.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#d97706">'+fmt(L3.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#c2410c">'+fmt(L4.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right">'+fmt(totPool)+'</td><td style="text-align:right">100%</td></tr></tbody></table>';
-  h+='<p class="note" style="margin-top:8px">L3 = mandaten/expertise. L4 = opleidingsniveau &amp; verantwoordelijkheid. Bedienden uitgesloten.</p>';rdiv.innerHTML=h;
+  h+='<p class="note" style="margin-top:8px">L1 = aandeel in gewerkte dagdelen (meer werken → meer L1). L2 = werkelijk geleverde consultaties = werkomvang × ratio (beloning voor quota halen in gewerkte tijd). L3 = mandaten/expertise. L4 = opleidingsniveau &amp; verantwoordelijkheid. Bedienden uitgesloten.</p>';rdiv.innerHTML=h;
 }
 
 function renderMix(){
