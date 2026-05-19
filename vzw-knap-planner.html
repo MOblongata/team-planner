@@ -272,14 +272,22 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
       <div class="param-row"><div class="param-label">Rentevoet (jaarlijks)</div><input type="number" class="param-input" id="hv-rentevoet" min="0" max="20" step="0.05" oninput="hvUpd('rentevoet',+this.value)"><span class="param-unit">%</span></div>
       <div class="param-row"><div class="param-label">Notaris/registratie<small>% op aankoop, eenmalige cash-kost (info)</small></div><input type="number" class="param-input" id="hv-registratie" min="0" max="30" step="0.1" oninput="hvUpd('registratie',+this.value)"><span class="param-unit">%</span></div>
     </div>
-    <div style="border-top:1px solid #f3f4f6;margin:11px 0 7px"></div>
-    <div style="font-size:10.5px;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:7px">🛠 Verbouwing / inrichting</div>
-    <div class="param-row"><div class="param-label">Totaal bedrag</div><input type="number" class="param-input" style="width:110px" id="hv-verbouwingBedrag" oninput="hvUpd('verbouwingBedrag',+this.value)"><span class="param-unit">€</span></div>
-    <div class="param-row"><div class="param-label">Afschrijvingsperiode</div><input type="number" class="param-input" id="hv-verbouwingJaren" min="1" max="40" oninput="hvUpd('verbouwingJaren',+this.value)"><span class="param-unit">jaar</span></div>
     <div id="hv-result" style="margin-top:11px"></div>
   </div>
   <div class="card">
-    <div class="card-title">Overige maandelijkse werkingskosten</div>
+    <div class="card-title">🛠 Investeringen &amp; afschrijvingen</div>
+    <p class="note" style="margin-bottom:8px">Voeg per investering (verbouwing, EEG-toestel, meubels, IT, ...) een bedrag toe met eigen afschrijvingsperiode. De maandelijkse afschrijving verschijnt automatisch in de tabel hieronder.</p>
+    <table><thead><tr><th>Omschrijving</th><th style="width:110px">Bedrag €</th><th style="width:100px">Afschrijving</th><th style="width:110px;text-align:right">€/mnd</th><th style="width:30px"></th></tr></thead><tbody id="inv-tbody"></tbody></table>
+    <div class="add-row">
+      <div><label>Omschrijving</label><input type="text" id="ni-naam" placeholder="Bv. EEG-toestel" style="width:200px"></div>
+      <div><label>Bedrag (€)</label><input type="number" id="ni-bedrag" placeholder="25000" style="width:100px"></div>
+      <div><label>Periode (jaar)</label><input type="number" id="ni-jaren" placeholder="5" min="1" max="40" style="width:80px"></div>
+      <button class="btn btn-primary" onclick="addInvestering()">+ Toevoegen</button>
+    </div>
+    <div class="totaal-row" id="inv-totaal" style="margin-top:9px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Totale Maandelijkse werkingskosten</div>
     <table><thead><tr><th>Omschrijving</th><th style="width:175px">Bedrag (mnd of jr)</th><th style="width:30px"></th></tr></thead><tbody id="kosten-tbody"></tbody></table>
     <div class="add-row">
       <div><label>Omschrijving</label><input type="text" id="nk-naam" placeholder="Nieuwe post" style="width:185px"></div>
@@ -293,6 +301,14 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
 </div>
 
 <div id="tab-overleg" class="tab-pane">
+  <div class="card">
+    <div class="card-title">Overhead toepassen op afdrachten?</div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12.5px">
+      <input type="checkbox" id="overleg-active" checked onchange="toggleOverlegOh(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#4f46e5">
+      <span><strong>Overlegoverhead actief</strong> — wanneer aan: het % niet-factureerbaar wordt afgetrokken van alle VZW-afdrachten en netto-inkomens in tab Financieel, Mix, Cappuccino, Capaciteit.</span>
+    </label>
+    <p class="note" id="overleg-status" style="margin-top:6px"></p>
+  </div>
   <div class="card"><div class="card-title">Overlegparameters per traject</div>
     <div class="param-row"><div class="param-label">Opstart bespreking<small>1× bij aanvang</small></div><input type="number" class="param-input" id="p-opstart" value="15" min="0" max="120" oninput="onOverleg()"><span class="param-unit">min</span></div>
     <div class="param-row"><div class="param-label">Trajectbesprekingen<small>Aantal per traject</small></div><input type="number" class="param-input" id="p-ntraject" value="2" min="0" max="20" oninput="onOverleg()"><span class="param-unit">×</span></div>
@@ -359,9 +375,10 @@ function recomputeIdCtr(){
   (mandaten||[]).forEach(m=>{mx=Math.max(mx,num(m.id)+1);});
   (acts||[]).forEach(a=>{mx=Math.max(mx,num(a.id)+1);});
   (mdoBookings||[]).forEach(b=>{mx=Math.max(mx,num(b.id)+1);});
+  (investeringen||[]).forEach(i=>{mx=Math.max(mx,num(i.id)+1);});
   idCtr=mx;
 }
-function idExists(id){return(team||[]).some(x=>x.id===id)||(kostenData||[]).some(x=>x.id===id)||(mandaten||[]).some(x=>x.id===id)||(acts||[]).some(x=>x.id===id)||(mdoBookings||[]).some(x=>x.id===id);}
+function idExists(id){return(team||[]).some(x=>x.id===id)||(kostenData||[]).some(x=>x.id===id)||(mandaten||[]).some(x=>x.id===id)||(acts||[]).some(x=>x.id===id)||(mdoBookings||[]).some(x=>x.id===id)||(investeringen||[]).some(x=>x.id===id);}
 function nextId(prefix){let id;do{id=prefix+(idCtr++);}while(idExists(id));return id;}
 
 const DEFAULT_TEAM=[
@@ -387,7 +404,8 @@ const DEFAULT_KOSTEN=[
   {id:'k10',naam:'Diversen / reserve',bedrag:3629,periode:'mnd'},
 ];
 const DEFAULT_OVERLEG={opstart:15,ntraject:2,mintraject:15,mdofreq:5,mdomin:15,trajlen:20,consdur:60};
-const DEFAULT_HUISVESTING={type:'huur',maandhuur:3000,aankoopprijs:600000,eigenInbreng:100000,registratie:12,leningJaren:25,rentevoet:3.5,verbouwingBedrag:158000,verbouwingJaren:10};
+const DEFAULT_HUISVESTING={type:'huur',maandhuur:3000,aankoopprijs:600000,eigenInbreng:100000,registratie:12,leningJaren:25,rentevoet:3.5,verbouwingBedrag:0,verbouwingJaren:0};
+const DEFAULT_INVESTERINGEN=[{id:'inv-init',naam:'Verbouwing/inrichting pand',bedrag:158000,jaren:10}];
 const DEFAULT_MANDATEN=[
   {id:'md1',naam:'Coördinatie / praktijkleiding',punten:5},
   {id:'md2',naam:'MDO-voorzitter',punten:3},
@@ -418,6 +436,7 @@ function mkDef(){return[[true,true,false],[true,true,false],[true,false,false],[
 team.forEach(p=>slots[p.id]=mkDef());
 let kostenData=DEFAULT_KOSTEN.map(k=>({...k}));
 let huisvesting={...DEFAULT_HUISVESTING};
+let investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));
 let mandaten=DEFAULT_MANDATEN.map(m=>({...m}));
 let personMandaten={},werkelijkeCons={};
 let cappData={...DEFAULT_CAPP};
@@ -425,6 +444,7 @@ let mdoConfig={...DEFAULT_MDO_CONFIG};
 let mdoBookings=[]; // [{id, day:0-4, startHour:float (uren sinds middernacht), durationHours:float}]
 let mdoBlokken={}; // {pid: aantalMDOsPerWeek} — aantal MDO-sessies/cliëntbesprekingen per week per teamlid
 let cappOptIn={}; // {pid: true/false} — deelname aan cappuccinopool. Default true voor zelfstandigen.
+let overlegOhActief=true; // wanneer uit: overhead wordt op 0 gezet in alle berekeningen (Fin, Mix, Capp, ...).
 let acts=DEFAULT_ACTS.map(a=>({...a}));
 let personMix={};        // {pid:[{actId,pct}]}
 let personTechnisch={};  // {pid:{actId:count}}
@@ -486,7 +506,7 @@ function copyJSON(){const ta=document.getElementById('modal-json');ta.select();t
 
 function getOverlegFromDOM(){const g=id=>+(document.getElementById(id)?.value)||0;return{opstart:g('p-opstart')||15,ntraject:g('p-ntraject')||2,mintraject:g('p-mintraject')||15,mdofreq:g('p-mdofreq')||5,mdomin:g('p-mdomin')||15,trajlen:g('p-trajlen')||20,consdur:g('p-consdur')||60};}
 function getCappFromDOM(){return{pctL1:+(document.getElementById('capp-pct-l1')?.value)||30,pctL2:+(document.getElementById('capp-pct-l2')?.value)||30,pctL3:+(document.getElementById('capp-pct-l3')?.value)||20,pctL4cap:+(document.getElementById('capp-pct-l4cap')?.value)||20,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
-function buildState(){return{version:6,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn))};}
+function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief};}
 function applyState(st){
   team=(st.team||DEFAULT_TEAM.map(p=>({...p}))).map(p=>({type:'zelfstandige',...p}));
   slots=st.slots||{};team.forEach(p=>{if(!slots[p.id])slots[p.id]=mkDef();});
@@ -497,8 +517,15 @@ function applyState(st){
     const k1=kostenData.find(k=>k.id==='k1'||/huur.*pand/i.test(k.naam||'')),k2=kostenData.find(k=>k.id==='k2'||/afschrijv.*(renov|verbouw|inricht)/i.test(k.naam||''));
     huisvesting={...DEFAULT_HUISVESTING};
     if(k1){huisvesting.maandhuur=Math.round(maandBedrag(k1));kostenData=kostenData.filter(k=>k!==k1);}
-    if(k2){const mnd=maandBedrag(k2);huisvesting.verbouwingBedrag=Math.round(mnd*12*huisvesting.verbouwingJaren);kostenData=kostenData.filter(k=>k!==k2);}
+    if(k2){const mnd=maandBedrag(k2);huisvesting.verbouwingBedrag=Math.round(mnd*12*10);huisvesting.verbouwingJaren=10;kostenData=kostenData.filter(k=>k!==k2);}
   }
+  // Investeringen — migratie van oude huisvesting.verbouwingBedrag/Jaren naar nieuwe lijst
+  if(Array.isArray(st.investeringen)){investeringen=JSON.parse(JSON.stringify(st.investeringen));}
+  else if((+huisvesting.verbouwingBedrag||0)>0&&(+huisvesting.verbouwingJaren||0)>0){
+    investeringen=[{id:'inv-migr-'+Date.now(),naam:'Verbouwing/inrichting pand',bedrag:+huisvesting.verbouwingBedrag,jaren:+huisvesting.verbouwingJaren}];
+  }else{investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));}
+  // Reset oude velden om dubbeltelling te voorkomen
+  huisvesting.verbouwingBedrag=0;huisvesting.verbouwingJaren=0;
   mandaten=st.mandaten||DEFAULT_MANDATEN.map(m=>({...m}));normalizeMandaten();
   personMandaten=st.personMandaten||{};werkelijkeCons=st.werkelijkeCons||{};
   cappData={...DEFAULT_CAPP,...(st.cappData||{})};
@@ -509,6 +536,7 @@ function applyState(st){
   mdoBookings=Array.isArray(st.mdoBookings)?JSON.parse(JSON.stringify(st.mdoBookings)):[];
   mdoBlokken=st.mdoBlokken||{};
   cappOptIn=st.cappOptIn||{};
+  overlegOhActief=st.overlegOhActief!==undefined?!!st.overlegOhActief:true;
   const ov={...DEFAULT_OVERLEG,...(st.overleg||{})};
   Object.entries(ov).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});
   if(st.bureauLimit){const bl=document.getElementById('bureau-limit');if(bl)bl.value=st.bureauLimit;}
@@ -522,11 +550,12 @@ function setStatus(t,c){const el=document.getElementById('save-status');if(el){e
 function onAnyChange(){lsAutoSave();setStatus('✓ Opgeslagen','saved');}
 function exportJSON(){document.getElementById('modal-json').value=JSON.stringify(buildState(),null,2);openModal();}
 function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{applyState(JSON.parse(e.target.result));refreshAll();lsAutoSave();setStatus('✓ Geladen','saved');}catch(err){alert('Fout: '+err.message);}};r.readAsText(f);inp.value='';}
-function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
+function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
 
 function clr(i){return COLORS[i%COLORS.length];}
 function fmt(n){return'€\u202F'+Math.round(n).toLocaleString('nl-BE');}
-function ohPct(){const g=id=>+(document.getElementById(id)?.value)||0;const op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60,oh=op+nt*mt+Math.floor(tl/mf)*mm;return oh/(oh+tl*cd);}
+function ohPct(){if(!overlegOhActief)return 0;const g=id=>+(document.getElementById(id)?.value)||0;const op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60,oh=op+nt*mt+Math.floor(tl/mf)*mm;return oh/(oh+tl*cd);}
+function ohPctRaw(){const g=id=>+(document.getElementById(id)?.value)||0;const op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60,oh=op+nt*mt+Math.floor(tl/mf)*mm;return oh/(oh+tl*cd);}
 function wkPerMaand(p){return(p.wkjr||46)/12;}
 function dagdelen(p){return(slots[p.id]||[]).reduce((s,d)=>s+d.reduce((sb,b)=>sb+(b?1:0),0),0);}
 function avondDelen(p){return(slots[p.id]||[]).reduce((s,d)=>s+(d[2]?1:0),0);}
@@ -536,10 +565,11 @@ function maandBedrag(k){return k.periode==='jr'?(+k.bedrag||0)/12:(+k.bedrag||0)
 function annuiteit(P,jaarRente,jaren){if(P<=0||jaren<=0)return 0;const n=jaren*12,i=(+jaarRente||0)/100/12;if(i===0)return P/n;return P*i*Math.pow(1+i,n)/(Math.pow(1+i,n)-1);}
 function hvTeLenen(){return Math.max(0,(+huisvesting.aankoopprijs||0)-(+huisvesting.eigenInbreng||0));}
 function hvBasisMnd(){if(huisvesting.type==='aankoop')return annuiteit(hvTeLenen(),huisvesting.rentevoet,+huisvesting.leningJaren||0);return+huisvesting.maandhuur||0;}
-function hvVerbouwingMnd(){const b=+huisvesting.verbouwingBedrag||0,j=+huisvesting.verbouwingJaren||0;if(b<=0||j<=0)return 0;return b/(j*12);}
-function hvMaandlast(){return hvBasisMnd()+hvVerbouwingMnd();}
+function investeringMnd(inv){const b=+inv.bedrag||0,j=+inv.jaren||0;if(b<=0||j<=0)return 0;return b/(j*12);}
+function totaleInvesteringMnd(){return investeringen.reduce((s,i)=>s+investeringMnd(i),0);}
+function hvMaandlast(){return hvBasisMnd();}
 function hvNotarisCash(){if(huisvesting.type!=='aankoop')return 0;return(+huisvesting.aankoopprijs||0)*((+huisvesting.registratie||0)/100);}
-function totalKosten(){return kostenData.reduce((s,k)=>s+maandBedrag(k),0)+hvMaandlast();}
+function totalKosten(){return kostenData.reduce((s,k)=>s+maandBedrag(k),0)+hvMaandlast()+totaleInvesteringMnd();}
 function slotCount(di,bi){return team.filter(p=>slots[p.id]?.[di]?.[bi]).length;}
 function bureauLim(){return+(document.getElementById('bureau-limit')?.value)||8;}
 function badgeCls(n){if(!n)return'bempty';const l=bureauLim();if(n>l)return'bover';if(n>=l*.75)return'bwarn';return'bok';}
@@ -676,7 +706,7 @@ function renderFin(){
   const k=totalKosten(),vzw=totalVzw(),r=vzw-k;
   document.getElementById('fk').textContent=fmt(k);document.getElementById('fi').textContent=fmt(vzw);
   const el=document.getElementById('fr');el.textContent=(r>=0?'+':'')+fmt(r);el.className='sum-val '+(r>=0?'green':'red');
-  document.getElementById('fin-note').textContent='Overhead: '+(ohPct()*100).toFixed(1)+'% niet-factureerbaar. ☕ pool-payout maandelijks uit cappuccino-verdeling.';
+  document.getElementById('fin-note').innerHTML=(overlegOhActief?'Overhead: '+(ohPct()*100).toFixed(1)+'% niet-factureerbaar (uit Overleg-tab).':'<span style="color:#dc2626">⚠ Overlegoverhead staat uit</span> — afdrachten worden niet gecorrigeerd voor overlegtijd. Schakel in via Overleg-tab.')+' ☕ pool-payout maandelijks uit cappuccino-verdeling.';
   // Break-even indicator
   const beEl=document.getElementById('fin-breakeven');
   if(beEl){
@@ -862,9 +892,9 @@ function renderHuisvesting(){
   const sH=document.getElementById('hv-huur-section'),sA=document.getElementById('hv-aankoop-section');
   if(sH)sH.style.display=isA?'none':'';if(sA)sA.style.display=isA?'':'none';
   const sv=(id,v)=>{const el=document.getElementById(id);if(el&&document.activeElement!==el)el.value=v;};
-  sv('hv-maandhuur',huisvesting.maandhuur);sv('hv-aankoopprijs',huisvesting.aankoopprijs);sv('hv-eigenInbreng',huisvesting.eigenInbreng);sv('hv-leningJaren',huisvesting.leningJaren);sv('hv-rentevoet',huisvesting.rentevoet);sv('hv-registratie',huisvesting.registratie);sv('hv-verbouwingBedrag',huisvesting.verbouwingBedrag);sv('hv-verbouwingJaren',huisvesting.verbouwingJaren);
+  sv('hv-maandhuur',huisvesting.maandhuur);sv('hv-aankoopprijs',huisvesting.aankoopprijs);sv('hv-eigenInbreng',huisvesting.eigenInbreng);sv('hv-leningJaren',huisvesting.leningJaren);sv('hv-rentevoet',huisvesting.rentevoet);sv('hv-registratie',huisvesting.registratie);
   const tl=document.getElementById('hv-telenen');if(tl)tl.textContent=fmt(hvTeLenen());
-  const basis=hvBasisMnd(),verb=hvVerbouwingMnd(),tot=basis+verb,notaris=hvNotarisCash(),tlEur=hvTeLenen();
+  const basis=hvBasisMnd(),notaris=hvNotarisCash(),tlEur=hvTeLenen();
   let extra='';
   if(isA){
     const totBetaald=basis*(+huisvesting.leningJaren||0)*12,rente=Math.max(0,totBetaald-tlEur);
@@ -874,28 +904,64 @@ function renderHuisvesting(){
       +(notaris>0?'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#b45309"><span>+ Notaris/registratie (eenmalig cash)</span><span>'+fmt(notaris)+'</span></div>':'');
   }
   const r=document.getElementById('hv-result');if(r)r.innerHTML='<div style="background:#f9fafb;border-radius:8px;padding:11px;font-size:12.5px">'
-    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+(isA?'Maandaflossing lening':'Maandhuur')+'</span><strong>'+fmt(basis)+'</strong></div>'
-    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Afschrijving verbouwing/inrichting</span><strong>'+fmt(verb)+'</strong></div>'
-    +'<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:5px;border-top:1px solid #e5e7eb;font-weight:700;color:#4f46e5;font-size:13.5px"><span>Maandlast huisvesting</span><span>'+fmt(tot)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700;color:#4f46e5;font-size:13.5px"><span>'+(isA?'Maandaflossing lening':'Maandhuur')+'</span><span>'+fmt(basis)+'</span></div>'
     +(extra?'<div style="margin-top:9px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:11.5px">'+extra+'</div>':'')
     +'</div>';
 }
 function renderKosten(){
   renderHuisvesting();
-  document.getElementById('kosten-tbody').innerHTML=kostenData.map(k=>{const isJr=k.periode==='jr',mnd=maandBedrag(k),hint=isJr&&k.bedrag?'<span style="font-size:10px;color:#9ca3af;margin-left:4px">= '+fmt(mnd)+'/mnd</span>':'';return'<tr><td><input type="text" value="'+k.naam+'" oninput="kn(\''+k.id+'\',this.value)"></td><td style="white-space:nowrap"><input type="number" value="'+k.bedrag+'" style="width:90px" oninput="kb(\''+k.id+'\',+this.value)"><button onclick="kp(\''+k.id+'\')" style="margin-left:4px;padding:2px 7px;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer;font-size:10.5px;font-weight:600;background:'+(isJr?'#4f46e5':'#f9fafb')+';color:'+(isJr?'#fff':'#6b7280')+'">'+(isJr?'jr':'mnd')+'</button>'+hint+'</td><td><button class="btn-del" onclick="delKost(\''+k.id+'\')">×</button></td></tr>';}).join('');
-  const ov=kostenData.reduce((s,k)=>s+maandBedrag(k),0),hv=hvMaandlast(),tot=ov+hv;
-  document.getElementById('kosten-totaal').innerHTML='Huisvesting: <strong>'+fmt(hv)+'</strong> + overige: <strong>'+fmt(ov)+'</strong> = <strong style="color:#4f46e5">'+fmt(tot)+'</strong> / maand';
+  renderInvesteringen();
+  // Auto-rijen voor investeringen (read-only in tabel, beheerd via Investeringen-card)
+  const invRows=investeringen.map(i=>{const mnd=investeringMnd(i);return'<tr style="background:#faf5ff"><td><span style="color:#7c3aed;font-weight:600">🛠 '+(i.naam||'(naamloos)')+'</span><span style="font-size:10px;color:#9ca3af;margin-left:5px">€'+(+i.bedrag||0).toLocaleString('nl-BE')+' / '+(+i.jaren||0)+'j</span></td><td style="color:#9ca3af;font-size:10.5px;font-style:italic">auto uit investering</td><td style="color:#7c3aed;font-weight:600;text-align:right">'+fmt(mnd)+'/mnd</td></tr>';}).join('');
+  const handRows=kostenData.map(k=>{const isJr=k.periode==='jr',mnd=maandBedrag(k),hint=isJr&&k.bedrag?'<span style="font-size:10px;color:#9ca3af;margin-left:4px">= '+fmt(mnd)+'/mnd</span>':'';return'<tr><td><input type="text" value="'+k.naam+'" oninput="kn(\''+k.id+'\',this.value)"></td><td style="white-space:nowrap"><input type="number" value="'+k.bedrag+'" style="width:90px" oninput="kb(\''+k.id+'\',+this.value)"><button onclick="kp(\''+k.id+'\')" style="margin-left:4px;padding:2px 7px;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer;font-size:10.5px;font-weight:600;background:'+(isJr?'#4f46e5':'#f9fafb')+';color:'+(isJr?'#fff':'#6b7280')+'">'+(isJr?'jr':'mnd')+'</button>'+hint+'</td><td><button class="btn-del" onclick="delKost(\''+k.id+'\')">×</button></td></tr>';}).join('');
+  document.getElementById('kosten-tbody').innerHTML=invRows+handRows;
+  const ov=kostenData.reduce((s,k)=>s+maandBedrag(k),0),hv=hvMaandlast(),inv=totaleInvesteringMnd(),tot=ov+hv+inv;
+  document.getElementById('kosten-totaal').innerHTML='Huisvesting: <strong>'+fmt(hv)+'</strong> + investeringen: <strong style="color:#7c3aed">'+fmt(inv)+'</strong> + overige: <strong>'+fmt(ov)+'</strong> = <strong style="color:#4f46e5">'+fmt(tot)+'</strong> / maand';
   const vpk=team.filter(p=>p.pct===0&&dagdelen(p)>0),ne=document.getElementById('kosten-vpk-note');
   if(vpk.length){ne.innerHTML='⚠️ <strong>'+vpk.map(p=>p.naam).join(', ')+'</strong> afdracht 0%.';ne.style.display='block';}else ne.style.display='none';
 }
+
+function renderInvesteringen(){
+  const tb=document.getElementById('inv-tbody');
+  if(!tb)return;
+  if(!investeringen.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-size:11px;padding:10px">Nog geen investeringen — voeg er hieronder een toe.</td></tr>';}
+  else{
+    tb.innerHTML=investeringen.map(i=>{const mnd=investeringMnd(i);return'<tr><td><input type="text" value="'+(i.naam||'')+'" oninput="invN(\''+i.id+'\',this.value)" style="min-width:170px"></td><td><input type="number" value="'+(+i.bedrag||0)+'" min="0" style="width:100px" oninput="invB(\''+i.id+'\',+this.value)"></td><td style="white-space:nowrap"><input type="number" value="'+(+i.jaren||0)+'" min="1" max="40" style="width:55px" oninput="invJ(\''+i.id+'\',+this.value)"><span style="font-size:10.5px;color:#9ca3af;margin-left:4px">jaar</span></td><td style="text-align:right;color:#7c3aed;font-weight:600">'+fmt(mnd)+'</td><td><button class="btn-del" onclick="delInvestering(\''+i.id+'\')">×</button></td></tr>';}).join('');
+  }
+  const tot=totaleInvesteringMnd();
+  const totEl=document.getElementById('inv-totaal');
+  if(totEl)totEl.innerHTML='Totaal afschrijving: <strong style="color:#7c3aed">'+fmt(tot)+'</strong> / maand';
+}
 function setHvType(t){huisvesting.type=t;renderKosten();renderFin();renderCapp();onAnyChange();}
 function hvUpd(field,v){huisvesting[field]=v;renderHuisvesting();renderFin();renderCapp();onAnyChange();}
+function invN(id,v){const i=investeringen.find(x=>x.id===id);if(i){i.naam=v;renderKosten();onAnyChange();}}
+function invB(id,v){const i=investeringen.find(x=>x.id===id);if(i){i.bedrag=v;renderKosten();renderFin();renderCapp();onAnyChange();}}
+function invJ(id,v){const i=investeringen.find(x=>x.id===id);if(i){i.jaren=v;renderKosten();renderFin();renderCapp();onAnyChange();}}
+function delInvestering(id){investeringen=investeringen.filter(x=>x.id!==id);renderKosten();renderFin();renderCapp();onAnyChange();}
+function addInvestering(){
+  const n=(document.getElementById('ni-naam')?.value||'').trim();
+  const b=+(document.getElementById('ni-bedrag')?.value)||0;
+  const j=+(document.getElementById('ni-jaren')?.value)||0;
+  if(!n){alert('Geef de investering een omschrijving.');return;}
+  if(b<=0||j<=0){alert('Vul een geldig bedrag en afschrijvingsperiode in.');return;}
+  investeringen.push({id:nextId('inv'),naam:n,bedrag:b,jaren:j});
+  ['ni-naam','ni-bedrag','ni-jaren'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderKosten();renderFin();renderCapp();onAnyChange();
+}
 
 function renderOverleg(){
+  // Synchroniseer checkbox met state
+  const cb=document.getElementById('overleg-active');if(cb)cb.checked=overlegOhActief;
+  const st=document.getElementById('overleg-status');
+  if(st){
+    const raw=ohPctRaw();
+    if(overlegOhActief)st.innerHTML='<span style="color:#059669;font-weight:600">✓ Actief</span> — overhead van <strong>'+(raw*100).toFixed(1)+'%</strong> wordt overal afgetrokken.';
+    else st.innerHTML='<span style="color:#dc2626;font-weight:600">⊘ Uit</span> — afdrachten worden berekend zonder overhead-aftrek (potentiële situatie, raw <strong>'+(raw*100).toFixed(1)+'%</strong> zou anders verloren gaan).';
+  }
   const g=id=>+(document.getElementById(id)?.value)||0,op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60;
   const ohTot=op+nt*mt+Math.floor(tl/mf)*mm,cons=tl*cd,grand=ohTot+cons,bill=cons/grand,over=ohTot/grand;
   document.getElementById('oh-bar').innerHTML='<div class="oh-bill" style="width:'+bill*100+'%">'+(bill*100).toFixed(1)+'%</div><div class="oh-over" style="width:'+over*100+'%">'+(over*100).toFixed(1)+'%</div>';
-  document.getElementById('oh-summary').innerHTML='<strong>Overleg/traject:</strong> '+ohTot+' min &nbsp;|&nbsp; <strong>Factureerbaar: <span style="color:#059669">'+(bill*100).toFixed(1)+'%</span></strong>';
+  document.getElementById('oh-summary').innerHTML='<strong>Overleg/traject:</strong> '+ohTot+' min &nbsp;|&nbsp; <strong>Factureerbaar: <span style="color:#059669">'+(bill*100).toFixed(1)+'%</span></strong>'+(overlegOhActief?'':' &nbsp;<span style="color:#dc2626;font-size:11px">⚠ overhead-aftrek staat uit</span>');
   document.getElementById('impact-tbody').innerHTML=team.map(p=>{const z=p.tarief*p.cons*(p.pct/100),m=z*bill,d=m-z;return'<tr><td>'+p.naam+'</td><td style="text-align:right">'+fmt(z)+'/blok</td><td style="text-align:right">'+fmt(m)+'/blok</td><td style="text-align:right;color:'+(d<-.01?'#dc2626':'#6b7280')+'">'+(d<-.01?'':'+')+fmt(d)+'/blok</td></tr>';}).join('');
 }
 
@@ -1139,7 +1205,13 @@ function onCappChange(){renderCapp();onAnyChange();}
 function toggleSlot(pid,di,bi){if(!slots[pid])slots[pid]=mkDef();slots[pid][di][bi]=!slots[pid][di][bi];renderRooster();renderFin();renderCapp();renderMix();renderCap();onAnyChange();}
 function addPersoon(){const n=document.getElementById('nh-naam').value.trim();if(!n)return;const id=nextId('tp'),t=document.getElementById('nh-type').value||'zelfstandige';const pctStr=document.getElementById('nh-pct').value;const pct=pctStr===''||pctStr==null?20:+pctStr;team.push({id,naam:n,type:t,tarief:+document.getElementById('nh-tarief').value||80,cons:+document.getElementById('nh-cons').value||4,pct:pct,wkjr:+document.getElementById('nh-wkjr').value||46});slots[id]=mkDef();['nh-naam','nh-tarief','nh-cons','nh-pct','nh-wkjr'].forEach(x=>document.getElementById(x).value='');refreshAll();onAnyChange();}
 function delPersoon(id){team=team.filter(p=>p.id!==id);delete slots[id];delete personMandaten[id];delete werkelijkeCons[id];delete personMix[id];delete personTechnisch[id];delete personMDO[id];delete personAdmin[id];delete personAvond[id];delete mdoBlokken[id];delete cappOptIn[id];refreshAll();onAnyChange();}
-function onOverleg(){renderOverleg();renderFin();renderRooster();renderCap();onAnyChange();}
+function onOverleg(){renderOverleg();renderFin();renderRooster();renderCap();renderCapp();if(document.getElementById('tab-mix').classList.contains('active'))renderMix();onAnyChange();}
+function toggleOverlegOh(active){
+  overlegOhActief=!!active;
+  renderOverleg();renderFin();renderRooster();renderCap();renderCapp();
+  if(document.getElementById('tab-mix').classList.contains('active'))renderMix();
+  onAnyChange();
+}
 function actN(id,v){const a=acts.find(x=>x.id===id);if(a){a.naam=v;onAnyChange();}}
 function actF(id,v){const a=acts.find(x=>x.id===id);if(a){a.familie=v;renderMix();onAnyChange();}}
 function actT(id,v){const a=acts.find(x=>x.id===id);if(a){a.tarief=v;renderFin();renderCapp();renderMix();renderCap();renderTeam();onAnyChange();}}
