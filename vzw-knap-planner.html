@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VZW KNAP Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light;}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#1a1a1a;background:#f0f2f5;}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;padding:0 10px;overflow-x:auto;}
+.tab-btn{padding:10px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;}
+.tab-btn.active{color:#4f46e5;border-bottom-color:#4f46e5;font-weight:700;}
+.tab-btn:hover:not(.active){color:#374151;}
+.tab-pane{display:none;padding:12px;}.tab-pane.active{display:block;}
+.card{background:#fff;border-radius:10px;padding:13px;margin-bottom:11px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.card-title{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;}
+.sum-card{background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.sum-label{font-size:10px;color:#9ca3af;margin-bottom:2px;}.sum-val{font-size:19px;font-weight:700;}
+.green{color:#059669;}.red{color:#dc2626;}.neutral{color:#1a1a1a;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:6px 8px;background:#f9fafb;color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #e5e7eb;}
+td{padding:5px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}tr:last-child td{border-bottom:none;}
+td input[type=number],td input[type=text]{width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:3px 5px;font-size:12px;background:#fafafa;}
+td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
+.add-row{display:flex;gap:7px;margin-top:11px;align-items:flex-end;flex-wrap:wrap;}
+.add-row label{font-size:10.5px;color:#6b7280;display:block;margin-bottom:2px;}
+.add-row input,.add-row select{border:1px solid #e5e7eb;border-radius:6px;padding:5px 7px;font-size:12px;background:#fff;}
+.btn{padding:6px 12px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;}
+.btn-primary{background:#4f46e5;color:#fff;}.btn-primary:hover{background:#4338ca;}
+.btn-sm{padding:3px 9px;font-size:11px;}
+.btn-del{background:none;border:none;cursor:pointer;color:#d1d5db;font-size:13px;padding:2px 5px;line-height:1;}.btn-del:hover{color:#dc2626;}
+.chart-wrap{position:relative;height:195px;}
+.note{font-size:11px;color:#9ca3af;margin-top:7px;line-height:1.4;}
+.limit-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+.limit-label{font-size:12.5px;font-weight:500;}
+.limit-input{width:54px;border:2px solid #e5e7eb;border-radius:7px;padding:4px 7px;font-size:15px;font-weight:700;text-align:center;}
+.limit-input:focus{outline:none;border-color:#4f46e5;}
+.legend-row{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:#6b7280;}
+.leg{display:flex;align-items:center;gap:4px;}.leg-sq{width:11px;height:11px;border-radius:3px;}
+.rooster-wrap{overflow-x:auto;}.rt{border-collapse:collapse;width:100%;}.rt th,.rt td{padding:0;text-align:center;}
+.day-th{background:#f9fafb;font-size:10px;font-weight:700;color:#374151;padding:5px 0;border-left:2px solid #e5e7eb;}
+.blk-th{background:#f9fafb;font-size:9px;color:#9ca3af;padding:3px 0;font-weight:600;}.blk-th.fd{border-left:2px solid #e5e7eb;}
+.name-corner{min-width:118px;border-right:1px solid #e5e7eb;background:#f9fafb;}
+.nm-cell{text-align:left;padding:3px 7px;min-width:118px;border-right:1px solid #e5e7eb;display:flex;align-items:center;gap:5px;}
+.nm-cell span{flex:1;font-size:11.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.slot-td{padding:2px 1px;border-left:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;width:30px;}.slot-td.fd{border-left:2px solid #e5e7eb;}
+.slot-btn{width:28px;height:24px;border:none;border-radius:4px;cursor:pointer;background:#f3f4f6;font-size:9px;color:#9ca3af;transition:all .1s;}
+.slot-btn.on{color:#fff;font-weight:700;}.slot-btn:hover{opacity:.82;transform:scale(1.07);}
+.prow{border-bottom:1px solid #f9fafb;}.brow td{border-top:2px solid #e5e7eb;padding-top:3px;}
+.bureau-td{width:30px;padding:2px 1px;}.bureau-td.fd{border-left:2px solid #e5e7eb;}
+.bbadge{width:28px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin:auto;}
+.bok{background:#dcfce7;color:#16a34a;}.bwarn{background:#fef9c3;color:#ca8a04;}.bover{background:#fee2e2;color:#dc2626;}.bempty{background:#f9fafb;color:#d1d5db;}
+.color-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.param-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.param-label{flex:1;font-size:12px;}.param-label small{color:#9ca3af;display:block;font-size:10px;}
+.param-input{width:60px;border:1px solid #e5e7eb;border-radius:6px;padding:4px 7px;font-size:13px;font-weight:700;text-align:center;}
+.param-input:focus{outline:none;border-color:#4f46e5;}
+.param-unit{font-size:11px;color:#9ca3af;width:55px;}
+.oh-wrap{background:#f9fafb;border-radius:8px;padding:11px;margin-top:9px;}
+.oh-bar{height:26px;border-radius:6px;overflow:hidden;display:flex;margin:7px 0;}
+.oh-bill{background:#10b981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+.oh-over{background:#f59e0b;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;}
+.stat-card{background:#f9fafb;border-radius:8px;padding:10px;text-align:center;}
+.stat-label{font-size:10px;color:#9ca3af;margin-bottom:2px;}.stat-val{font-size:18px;font-weight:700;color:#374151;}
+.totaal-row{font-weight:600;text-align:right;margin-top:9px;font-size:12.5px;}
+.alert{border-radius:8px;padding:9px 12px;font-size:11.5px;line-height:1.5;margin-top:9px;}
+.alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
+.alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
+.netto-pill{display:inline-block;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:600;}
+.warn-pill{display:inline-block;background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:5px;padding:1px 6px;font-size:10px;}
+.save-bar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:8px;padding:7px 12px;background:#fff;border-bottom:1px solid #e5e7eb;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-wrap:wrap;}
+.save-status{font-size:11px;color:#9ca3af;flex:1;min-width:100px;}
+.save-status.saved{color:#059669;font-weight:600;}
+.btn-sv{padding:5px 11px;border:1px solid #e5e7eb;border-radius:7px;cursor:pointer;font-size:11.5px;font-weight:500;background:#fff;color:#374151;}
+.btn-sv:hover{background:#f9fafb;}
+.btn-sv.primary{background:#4f46e5;color:#fff;border-color:#4f46e5;}.btn-sv.primary:hover{background:#4338ca;}
+.btn-sv.danger{color:#dc2626;border-color:#fca5a5;}.btn-sv.danger:hover{background:#fef2f2;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:18px;width:90%;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:6px;}
+.modal p{font-size:11.5px;color:#6b7280;margin-bottom:10px;line-height:1.5;}
+.modal textarea{width:100%;height:140px;font-family:monospace;font-size:11px;border:1px solid #e5e7eb;border-radius:7px;padding:8px;resize:vertical;}
+.modal-btns{display:flex;gap:8px;margin-top:10px;justify-content:flex-end;}
+.capp-layer-bar{height:18px;border-radius:5px;overflow:hidden;display:flex;margin:6px 0;}
+.capp-l1{background:#7c3aed;}.capp-l2{background:#2563eb;}.capp-l3{background:#d97706;}.capp-l4{background:#c2410c;}.capp-res{background:#e5e7eb;}
+.capp-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;margin-top:4px;}
+.capp-leg{display:flex;align-items:center;gap:4px;}
+.capp-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.type-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:none;}
+.type-z{background:#ede9fe;color:#6d28d9;}.type-b{background:#fee2e2;color:#b91c1c;}
+.mandaat-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#f9fafb;color:#6b7280;margin:1px;}
+.mandaat-tag.on{background:#4f46e5;color:#fff;border-color:#4f46e5;}
+.capp-row-dim{opacity:.4;}
+.layer-cfg{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f3f4f6;}
+.layer-cfg:last-child{border-bottom:none;}
+.layer-cfg-label{font-size:12px;}.layer-cfg-label small{display:block;font-size:10px;color:#9ca3af;}
+.layer-cfg-input{width:56px;border:1px solid #e5e7eb;border-radius:6px;padding:3px 6px;font-size:13px;font-weight:700;text-align:center;}
+.layer-cfg-input:focus{outline:none;border-color:#4f46e5;}
+.layer-cfg-unit{font-size:11px;color:#9ca3af;width:28px;}
+.mix-person{background:#fff;border-radius:10px;padding:13px;margin-bottom:11px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.mix-section{margin-top:10px;padding-top:8px;border-top:1px solid #f3f4f6;}
+.pct-warn{color:#dc2626;font-size:11px;font-weight:600;}
+.pct-ok{color:#059669;font-size:11px;font-weight:600;}
+.cpb-pill{display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:700;}
+.capp-badge{font-size:10px;background:#f3e8ff;color:#7c3aed;padding:1px 6px;border-radius:3px;white-space:nowrap;}
+.avond-row{display:flex;align-items:center;gap:8px;padding:7px 9px;background:#fffbeb;border-radius:7px;font-size:11.5px;margin-top:8px;flex-wrap:wrap;}
+.cap-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:11px;}
+.mdo-ag{border-collapse:collapse;width:100%;font-size:11px;}
+.mdo-ag th{padding:5px 2px;background:#f9fafb;font-size:10px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;}
+.mdo-ag td{padding:0;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;height:18px;text-align:center;vertical-align:middle;}
+.mdo-ag .th-time{width:48px;color:#9ca3af;font-size:10px;}
+.mdo-ag .td-time{font-size:10px;color:#9ca3af;text-align:right;padding-right:6px;font-variant-numeric:tabular-nums;border-right:1px solid #e5e7eb;background:#fafafa;}
+.mdo-ag .cell-cons-ok{background:#f0fdf4;cursor:pointer;}
+.mdo-ag .cell-cons-ok:hover{background:#bbf7d0;}
+.mdo-ag .cell-cons-full{background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 4px,#fecaca 4px,#fecaca 8px);cursor:not-allowed;}
+.mdo-ag .cell-free{background:#fff;cursor:pointer;}
+.mdo-ag .cell-free:hover{background:#fef9c3;}
+.mdo-ag .cell-booked{background:#ddd6fe;color:#5b21b6;font-weight:700;cursor:pointer;}
+.mdo-ag .cell-booked:hover{background:#c4b5fd;}
+.mdo-ag .cell-booked-start{border-top:2px solid #7c3aed;}
+.mdo-ag .row-band-vm{background:#fafafa;}
+.mdo-ag .legend-mdo{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#6b7280;margin:7px 0;}
+.mdo-ag .legend-mdo .leg-sq{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle;}
+.mdo-bk-card{background:#f9fafb;border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid #7c3aed;}
+.mdo-bk-title{font-weight:700;color:#5b21b6;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.mdo-bk-pill{background:#ede9fe;color:#6d28d9;padding:1px 7px;border-radius:4px;font-size:10.5px;font-weight:600;}
+.mdo-bk-team{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.mdo-bk-mem{font-size:10.5px;padding:2px 7px;border-radius:4px;background:#fff;border:1px solid #e5e7eb;color:#374151;}
+.mdo-bk-mem.absent{opacity:.55;font-style:italic;}
+.capp-toggle{font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:700;border:1px solid transparent;line-height:1.3;}
+.capp-toggle.on{background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;}
+.capp-toggle.on:hover{background:#ddd6fe;}
+.capp-toggle.off{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb;}
+.capp-toggle.off:hover{background:#e5e7eb;}
+.be-indicator{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:12px;flex-wrap:wrap;}
+.be-indicator.ok{background:#f0fdf4;border:1px solid #86efac;color:#166534;}
+.be-indicator.bad{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;}
+.be-indicator.unknown{background:#f9fafb;border:1px solid #e5e7eb;color:#6b7280;}
+.be-indicator strong{font-size:13px;}
+.be-pill{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;}
+.be-pill.ok{background:#dcfce7;color:#15803d;}
+.be-pill.bad{background:#fee2e2;color:#b91c1c;}
+</style>
+</head>
+<body>
+<div class="modal-bg" id="save-modal">
+  <div class="modal">
+    <h3>💾 Instellingen opslaan</h3>
+    <p>Kopieer onderstaande JSON en sla op als <strong>.json</strong> bestand. Laad terug via "📂 Laden".</p>
+    <textarea id="modal-json" readonly onclick="this.select()"></textarea>
+    <div class="modal-btns">
+      <button class="btn-sv primary" onclick="copyJSON()">📋 Kopieer alles</button>
+      <button class="btn-sv" onclick="closeModal()">Sluiten</button>
+    </div>
+    <p id="copy-confirm" style="text-align:right;font-size:11px;color:#059669;margin-top:6px;display:none">✓ Gekopieerd!</p>
+  </div>
+</div>
+<div class="save-bar">
+  <span class="save-status" id="save-status">Laden...</span>
+  <button class="btn-sv primary" onclick="exportJSON()">💾 Opslaan</button>
+  <label class="btn-sv" style="cursor:pointer">📂 Laden<input type="file" accept=".json" style="display:none" onchange="importJSON(this)"></label>
+  <button class="btn-sv danger" onclick="resetConfirm()">↺ Reset</button>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('fin',this)">📊 Financieel</button>
+  <button class="tab-btn" onclick="showTab('rooster',this)">📅 Rooster</button>
+  <button class="tab-btn" onclick="showTab('team',this)">👥 Team</button>
+  <button class="tab-btn" onclick="showTab('kosten',this)">💶 Kosten</button>
+  <button class="tab-btn" onclick="showTab('overleg',this)">🗣 Overleg</button>
+  <button class="tab-btn" onclick="showTab('capp',this)">☕ Cappuccino</button>
+  <button class="tab-btn" onclick="showTab('mix',this)">📋 Mix</button>
+  <button class="tab-btn" onclick="showTab('cap',this)">📊 Capaciteit</button>
+</div>
+
+<div id="tab-fin" class="tab-pane active">
+  <div class="sum-grid">
+    <div class="sum-card"><div class="sum-label">Maandkosten</div><div class="sum-val neutral" id="fk">—</div></div>
+    <div class="sum-card"><div class="sum-label">VZW afdracht/mnd</div><div class="sum-val neutral" id="fi">—</div></div>
+    <div class="sum-card"><div class="sum-label">Resultaat VZW</div><div class="sum-val" id="fr">—</div></div>
+  </div>
+  <div id="fin-breakeven" class="be-indicator unknown" style="margin-bottom:11px"></div>
+  <div class="card">
+    <div class="card-title">Inkomen per teamlid</div>
+    <table><thead><tr><th>Naam</th><th style="width:215px">Afdracht (%  •  €/blok)</th><th style="width:48px;text-align:right">Blok/wk</th><th style="width:78px;text-align:right">VZW/mnd</th><th style="width:78px;text-align:right">Netto consult</th><th style="width:115px;text-align:right">☕ pool</th><th style="width:88px;text-align:right">Totaal netto</th></tr></thead><tbody id="fin-tbody"></tbody></table>
+    <div id="fin-alerts"></div><p class="note" id="fin-note"></p>
+  </div>
+  <div class="card"><div class="card-title">Break-even grafiek</div><div class="chart-wrap"><canvas id="fin-chart"></canvas></div></div>
+</div>
+
+<div id="tab-rooster" class="tab-pane">
+  <div class="card">
+    <div class="limit-row">
+      <span class="limit-label">Max. bureaus:</span>
+      <input type="number" class="limit-input" id="bureau-limit" value="8" min="1" max="20" oninput="renderRooster();onAnyChange()">
+      <div class="legend-row">
+        <div class="leg"><div class="leg-sq" style="background:#dcfce7;border:1px solid #86efac"></div>OK</div>
+        <div class="leg"><div class="leg-sq" style="background:#fef9c3;border:1px solid #fde047"></div>≥75%</div>
+        <div class="leg"><div class="leg-sq" style="background:#fee2e2;border:1px solid #fca5a5"></div>Over</div>
+      </div>
+    </div>
+    <div class="rooster-wrap"><table class="rt" id="rt"></table></div>
+    <p class="note" id="rooster-note" style="margin-top:8px"></p>
+  </div>
+  <div class="card">
+    <div class="card-title">🗣 MDO-blokken — configuratie</div>
+    <div class="param-row"><div class="param-label">Blokduur<small>één MDO-blok</small></div><input type="number" class="param-input" id="mdo-blokUren" value="2" min="0.5" max="8" step="0.5" oninput="setMdoConfig('blokUren',+this.value)"><span class="param-unit">uur</span></div>
+    <div class="param-row"><div class="param-label">MDO's per uur</div><input type="number" class="param-input" id="mdo-mdoPerUur" value="3" min="1" max="10" oninput="setMdoConfig('mdoPerUur',+this.value)"><span class="param-unit">/uur</span></div>
+    <div class="param-row"><div class="param-label">→ MDO's per blok<small>= blokduur × MDO's/uur</small></div><span id="mdo-sessies-info" style="font-weight:700;color:#7c3aed;flex:0">—</span><span class="param-unit"></span></div>
+    <div class="param-row"><div class="param-label">Tarief per MDO<small>uit Mix-tab (eerste MDO-act)</small></div><span id="mdo-tarief-info" style="font-weight:700;color:#7c3aed;flex:0">—</span><span class="param-unit"></span></div>
+    <div id="mdo-overzicht" style="background:#f9fafb;border-radius:8px;padding:11px;margin-top:9px;font-size:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🗣 MDO-agenda</div>
+    <p class="note" style="margin-bottom:8px">Klik op een tijdslot om een MDO-blok van <strong id="mdo-blkdur-info">2u</strong> in te plannen. Cellen tijdens consultatieblokken zonder vrij bureau zijn niet aanklikbaar. Onder de agenda zie je wie kan deelnemen.</p>
+    <div id="mdo-agenda-wrap" style="overflow-x:auto"></div>
+    <div id="mdo-bookings-list" style="margin-top:12px"></div>
+  </div>
+  <div class="card"><div class="card-title">Bureau samenvatting</div><div class="stat-grid" id="bstat"></div><div class="chart-wrap"><canvas id="rooster-chart"></canvas></div></div>
+</div>
+
+<div id="tab-team" class="tab-pane">
+  <div class="card">
+    <div class="card-title">Teamleden, tarieven &amp; planning</div>
+    <table><thead><tr><th>Naam</th><th style="width:56px">Type</th><th style="width:70px">Tarief €</th><th style="width:72px">Cons/blok</th><th style="width:72px">Afdracht %</th><th style="width:62px">Wk/jaar</th><th style="width:28px"></th></tr></thead><tbody id="team-tbody"></tbody></table>
+    <div class="add-row">
+      <div><label>Naam</label><input type="text" id="nh-naam" placeholder="Naam" style="width:130px"></div>
+      <div><label>Type</label><select id="nh-type"><option value="zelfstandige">Zelfstandige</option><option value="bediende">Bediende</option></select></div>
+      <div><label>Tarief (€)</label><input type="number" id="nh-tarief" placeholder="80" style="width:62px"></div>
+      <div><label>Cons/blok</label><input type="number" id="nh-cons" placeholder="4" style="width:60px"></div>
+      <div><label>Afdracht %</label><input type="number" id="nh-pct" placeholder="20" style="width:60px"></div>
+      <div><label>Wk/jaar</label><input type="number" id="nh-wkjr" placeholder="46" style="width:56px"></div>
+      <button class="btn btn-primary" onclick="addPersoon()">+ Toevoegen</button>
+    </div>
+    <div class="alert alert-info" style="margin-top:10px">Tarief/cons zijn standaardwaarden. Stel per persoon een gedetailleerde mix in via de <strong>📋 Mix</strong>-tab — die vervangt dan de standaard voor alle berekeningen.</div>
+  </div>
+</div>
+
+<div id="tab-kosten" class="tab-pane">
+  <div class="card">
+    <div class="card-title">🏠 Huisvesting — scenario</div>
+    <div style="display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap">
+      <button class="btn-sv" id="hv-btn-huur" onclick="setHvType('huur')">🔑 Huur</button>
+      <button class="btn-sv" id="hv-btn-aankoop" onclick="setHvType('aankoop')">🏦 Aankoop met lening</button>
+    </div>
+    <div id="hv-huur-section">
+      <div class="param-row"><div class="param-label">Maandhuur</div><input type="number" class="param-input" style="width:90px" id="hv-maandhuur" oninput="hvUpd('maandhuur',+this.value)"><span class="param-unit">€/mnd</span></div>
+    </div>
+    <div id="hv-aankoop-section" style="display:none">
+      <div class="param-row"><div class="param-label">Aankoopprijs<small>excl. notaris/registratie</small></div><input type="number" class="param-input" style="width:110px" id="hv-aankoopprijs" oninput="hvUpd('aankoopprijs',+this.value)"><span class="param-unit">€</span></div>
+      <div class="param-row"><div class="param-label">Eigen inbreng<small>cash, niet via lening</small></div><input type="number" class="param-input" style="width:110px" id="hv-eigenInbreng" oninput="hvUpd('eigenInbreng',+this.value)"><span class="param-unit">€</span></div>
+      <div class="param-row"><div class="param-label">Te lenen<small>= aankoop − eigen inbreng</small></div><span id="hv-telenen" style="font-weight:700;font-size:13px;color:#4f46e5;flex:0"></span><span class="param-unit"></span></div>
+      <div class="param-row"><div class="param-label">Looptijd lening</div><input type="number" class="param-input" id="hv-leningJaren" min="1" max="40" oninput="hvUpd('leningJaren',+this.value)"><span class="param-unit">jaar</span></div>
+      <div class="param-row"><div class="param-label">Rentevoet (jaarlijks)</div><input type="number" class="param-input" id="hv-rentevoet" min="0" max="20" step="0.05" oninput="hvUpd('rentevoet',+this.value)"><span class="param-unit">%</span></div>
+      <div class="param-row"><div class="param-label">Notaris/registratie<small>% op aankoop, eenmalige cash-kost (info)</small></div><input type="number" class="param-input" id="hv-registratie" min="0" max="30" step="0.1" oninput="hvUpd('registratie',+this.value)"><span class="param-unit">%</span></div>
+    </div>
+    <div style="border-top:1px solid #f3f4f6;margin:11px 0 7px"></div>
+    <div style="font-size:10.5px;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:7px">🛠 Verbouwing / inrichting</div>
+    <div class="param-row"><div class="param-label">Totaal bedrag</div><input type="number" class="param-input" style="width:110px" id="hv-verbouwingBedrag" oninput="hvUpd('verbouwingBedrag',+this.value)"><span class="param-unit">€</span></div>
+    <div class="param-row"><div class="param-label">Afschrijvingsperiode</div><input type="number" class="param-input" id="hv-verbouwingJaren" min="1" max="40" oninput="hvUpd('verbouwingJaren',+this.value)"><span class="param-unit">jaar</span></div>
+    <div id="hv-result" style="margin-top:11px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Overige maandelijkse werkingskosten</div>
+    <table><thead><tr><th>Omschrijving</th><th style="width:175px">Bedrag (mnd of jr)</th><th style="width:30px"></th></tr></thead><tbody id="kosten-tbody"></tbody></table>
+    <div class="add-row">
+      <div><label>Omschrijving</label><input type="text" id="nk-naam" placeholder="Nieuwe post" style="width:185px"></div>
+      <div><label>Bedrag (€)</label><input type="number" id="nk-bedrag" placeholder="0" style="width:88px"></div>
+      <div><label>Per</label><select id="nk-periode"><option value="mnd">maand</option><option value="jr">jaar</option></select></div>
+      <button class="btn btn-primary" onclick="addKost()">+ Toevoegen</button>
+    </div>
+    <div class="totaal-row" id="kosten-totaal"></div>
+    <div class="alert alert-warn" id="kosten-vpk-note" style="display:none"></div>
+  </div>
+</div>
+
+<div id="tab-overleg" class="tab-pane">
+  <div class="card"><div class="card-title">Overlegparameters per traject</div>
+    <div class="param-row"><div class="param-label">Opstart bespreking<small>1× bij aanvang</small></div><input type="number" class="param-input" id="p-opstart" value="15" min="0" max="120" oninput="onOverleg()"><span class="param-unit">min</span></div>
+    <div class="param-row"><div class="param-label">Trajectbesprekingen<small>Aantal per traject</small></div><input type="number" class="param-input" id="p-ntraject" value="2" min="0" max="20" oninput="onOverleg()"><span class="param-unit">×</span></div>
+    <div class="param-row"><div class="param-label">Duur trajectbespreking</div><input type="number" class="param-input" id="p-mintraject" value="15" min="5" max="90" oninput="onOverleg()"><span class="param-unit">min</span></div>
+    <div class="param-row"><div class="param-label">MDO frequentie<small>Om de N gesprekken</small></div><input type="number" class="param-input" id="p-mdofreq" value="5" min="1" max="20" oninput="onOverleg()"><span class="param-unit">gesprekken</span></div>
+    <div class="param-row"><div class="param-label">Duur MDO</div><input type="number" class="param-input" id="p-mdomin" value="15" min="5" max="90" oninput="onOverleg()"><span class="param-unit">min</span></div>
+    <div class="param-row"><div class="param-label">Trajectlengte<small>Totaal gesprekken</small></div><input type="number" class="param-input" id="p-trajlen" value="20" min="5" max="60" oninput="onOverleg()"><span class="param-unit">gesprekken</span></div>
+    <div class="param-row"><div class="param-label">Duur consultatie</div><input type="number" class="param-input" id="p-consdur" value="60" min="15" max="120" oninput="onOverleg()"><span class="param-unit">min</span></div>
+  </div>
+  <div class="card"><div class="card-title">Tijdsbalans per traject</div><div class="oh-wrap"><div style="display:flex;gap:12px;font-size:11px;margin-bottom:3px"><div class="leg"><div class="leg-sq" style="background:#10b981"></div>Factureerbaar</div><div class="leg"><div class="leg-sq" style="background:#f59e0b"></div>Overleg</div></div><div class="oh-bar" id="oh-bar"></div><div id="oh-summary" style="font-size:12px;line-height:1.6;color:#374151"></div></div></div>
+  <div class="card"><div class="card-title">Impact op afdracht per blok</div><table><thead><tr><th>Naam</th><th style="text-align:right">Zonder overhead</th><th style="text-align:right">Met overhead</th><th style="text-align:right">Verschil</th></tr></thead><tbody id="impact-tbody"></tbody></table></div>
+</div>
+
+<div id="tab-capp" class="tab-pane">
+  <div class="card">
+    <div class="card-title">☕ Pool &amp; Laagverdeling</div>
+    <div id="capp-pool-breakdown" style="margin-bottom:12px"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;color:#9ca3af">Manuele override:</span>
+      <input type="number" id="capp-overschot-manual" placeholder="auto" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;padding:4px 7px;font-size:13px" oninput="onCappChange()">
+    </div>
+    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7c3aed;margin-right:5px;vertical-align:middle"></span>Laag 1 — Espresso<small>Aanwezigheidspunten (blokken)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l1" value="30" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
+    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:5px;vertical-align:middle"></span>Laag 2 — Melk<small>Relatieve bezetting (max ratio 1,25)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l2" value="30" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
+    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#d97706;margin-right:5px;vertical-align:middle"></span>Laag 3 — Schuim<small>Mandaten &amp; expertise</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l3" value="20" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
+    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c2410c;margin-right:5px;vertical-align:middle"></span>Laag 4 — Kaneel<small>Solidariteit (max % van lagen 1+2+3)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l4cap" value="20" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
+    <div id="capp-pool-bar" style="margin-top:12px"></div>
+  </div>
+  <div class="card"><div class="card-title">Mandaten &amp; Expertise (laag 3) <span id="mdt-totaal" style="float:right;font-size:11px;color:#9ca3af">—</span></div><table><thead><tr><th>Mandaat / credential</th><th style="width:200px">Punten (totaal 30)</th><th style="width:30px"></th></tr></thead><tbody id="mandaten-tbody"></tbody></table><div class="add-row"><div><label>Omschrijving</label><input type="text" id="nm-naam" placeholder="Nieuw mandaat" style="width:200px"></div><button class="btn btn-primary" onclick="addMandaat()">+ Toevoegen</button></div><p class="note" style="margin-top:6px">Sliders zijn gekoppeld: totaal blijft 30 punten. Verhoog er één → de andere dalen evenredig.</p></div>
+  <div class="card"><div class="card-title">Invoer per persoon</div><table><thead><tr><th>Naam</th><th style="width:38px">Type</th><th style="width:70px;text-align:right">Verwacht<br><span style="font-weight:400;color:#9ca3af;font-size:9px">cons/mnd</span></th><th style="width:70px;text-align:right">Werkelijk<br><span style="font-weight:400;color:#9ca3af;font-size:9px">afgeleid</span></th><th style="width:140px">Ratio</th><th>Mandaten</th><th style="width:42px;text-align:right">Ptn L3</th></tr></thead><tbody id="capp-persoon-tbody"></tbody></table><p class="note" style="margin-top:6px">Bedienden (B) nemen niet deel. Ratio standaard op 1,0 (werkelijk = verwacht), begrensd op 1,25.</p></div>
+  <div class="card"><div class="card-title">Verdeling cappuccino-pool</div><div id="capp-result-content"></div></div>
+</div>
+
+<div id="tab-mix" class="tab-pane">
+  <div class="card">
+    <div class="card-title">📋 Actencatalogus — billable acts</div>
+    <table><thead><tr><th>Naam</th><th style="width:100px">Familie</th><th style="width:70px">Tarief €</th><th style="width:145px">Duur (min)</th><th style="width:110px">Routing</th><th style="width:28px"></th></tr></thead><tbody id="acts-tbody"></tbody></table>
+    <div class="add-row">
+      <div><label>Naam</label><input type="text" id="na-naam" placeholder="Nieuwe act" style="width:150px"></div>
+      <div><label>Familie</label><select id="na-familie"><option value="consultatie">💬 Consult</option><option value="technisch">🔬 Technisch</option><option value="mdo">👥 MDO</option><option value="groep">🫂 Groep</option><option value="toeslag">🌙 Toeslag</option><option value="admin">📝 Admin</option></select></div>
+      <div><label>Tarief (€)</label><input type="number" id="na-tarief" placeholder="50" style="width:68px"></div>
+      <div><label>Duur (min)</label><input type="number" id="na-duur" placeholder="60" style="width:65px"></div>
+      <button class="btn btn-primary" onclick="addAct()">+ Toevoegen</button>
+    </div>
+    <div class="alert alert-info" style="margin-top:8px;font-size:11px"><strong>Routing:</strong> "→ afdracht" = normale VZW-inkomsten. "→ ☕ pool" = rechtstreeks naar cappuccinopool. "⚙ p.p." = instelbaar per persoon (bv. avondtoeslag).</div>
+  </div>
+  <div id="mix-personen"></div>
+</div>
+
+<div id="tab-cap" class="tab-pane">
+  <div id="cap-content"></div>
+</div>
+
+<script>
+const DAYS=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'],DS=['Ma','Di','Wo','Do','Vr'],BLK=['VM','NM','Av'];
+const COLORS=['#818cf8','#34d399','#f472b6','#fb923c','#60a5fa','#a78bfa','#4ade80','#facc15','#f87171','#38bdf8','#2dd4bf','#e879f9','#94a3b8'];
+const LS_KEY='vzw-knap-planner-v4';
+const BLOK_MIN=240;
+let idCtr=300,finChart=null,rChart=null;
+function recomputeIdCtr(){
+  const num=s=>{if(typeof s!=='string')return 0;const m=s.match(/(\d+)$/);return m?+m[1]:0;};
+  let mx=300;
+  (team||[]).forEach(p=>{mx=Math.max(mx,num(p.id)+1);});
+  (kostenData||[]).forEach(k=>{mx=Math.max(mx,num(k.id)+1);});
+  (mandaten||[]).forEach(m=>{mx=Math.max(mx,num(m.id)+1);});
+  (acts||[]).forEach(a=>{mx=Math.max(mx,num(a.id)+1);});
+  (mdoBookings||[]).forEach(b=>{mx=Math.max(mx,num(b.id)+1);});
+  idCtr=mx;
+}
+function idExists(id){return(team||[]).some(x=>x.id===id)||(kostenData||[]).some(x=>x.id===id)||(mandaten||[]).some(x=>x.id===id)||(acts||[]).some(x=>x.id===id)||(mdoBookings||[]).some(x=>x.id===id);}
+function nextId(prefix){let id;do{id=prefix+(idCtr++);}while(idExists(id));return id;}
+
+const DEFAULT_TEAM=[
+  {id:'t1',naam:'Psychiater 1',tarief:100,cons:4,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t2',naam:'Psychiater 2',tarief:100,cons:4,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t3',naam:'Psycholoog',tarief:78,cons:5,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t4',naam:'Senior Coach',tarief:100,cons:4,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t5',naam:'Junior Coach',tarief:50,cons:6,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t6',naam:'Neuroloog 60min',tarief:130,cons:3,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t7',naam:'Neuroloog 30min',tarief:78,cons:8,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t8',naam:'Verpleegkundige',tarief:50,cons:6,pct:0,wkjr:46,type:'bediende'},
+  {id:'t9',naam:'Orthopedagoog',tarief:80,cons:5,pct:20,wkjr:46,type:'zelfstandige'},
+  {id:'t10',naam:'Gedragstherapeut',tarief:75,cons:5,pct:20,wkjr:46,type:'zelfstandige'},
+];
+const DEFAULT_KOSTEN=[
+  {id:'k3',naam:'Admin & secretariaat',bedrag:2000,periode:'mnd'},
+  {id:'k4',naam:'Elektriciteit/gas/water',bedrag:800,periode:'mnd'},
+  {id:'k5',naam:'Telefonie & internet',bedrag:200,periode:'mnd'},
+  {id:'k6',naam:'Verzekeringen',bedrag:400,periode:'mnd'},
+  {id:'k7',naam:'Boekhouding & juridisch',bedrag:350,periode:'mnd'},
+  {id:'k8',naam:'Marketing & communicatie',bedrag:300,periode:'mnd'},
+  {id:'k9',naam:'Schoonmaak',bedrag:400,periode:'mnd'},
+  {id:'k10',naam:'Diversen / reserve',bedrag:3629,periode:'mnd'},
+];
+const DEFAULT_OVERLEG={opstart:15,ntraject:2,mintraject:15,mdofreq:5,mdomin:15,trajlen:20,consdur:60};
+const DEFAULT_HUISVESTING={type:'huur',maandhuur:3000,aankoopprijs:600000,eigenInbreng:100000,registratie:12,leningJaren:25,rentevoet:3.5,verbouwingBedrag:158000,verbouwingJaren:10};
+const DEFAULT_MANDATEN=[
+  {id:'md1',naam:'Coördinatie / praktijkleiding',punten:5},
+  {id:'md2',naam:'MDO-voorzitter',punten:3},
+  {id:'md3',naam:'Supervisie stagiairs',punten:4},
+  {id:'md4',naam:'PhD lopende',punten:2},
+  {id:'md5',naam:'PhD afgerond',punten:4},
+  {id:'md6',naam:'Externe opleider / vormer',punten:2},
+  {id:'md7',naam:'Bestuursmandaat beroepsvereniging',punten:2},
+];
+const DEFAULT_CAPP={pctL1:30,pctL2:30,pctL3:20,pctL4cap:20,overschotManual:''};
+const DEFAULT_MDO_CONFIG={blokUren:2,mdoPerUur:3};
+const DEFAULT_ACTS=[
+  {id:'ac1',naam:'Consultatie 60 min',familie:'consultatie',tarief:130,duur:60,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac2',naam:'Consultatie 30 min',familie:'consultatie',tarief:78,duur:30,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac3',naam:'Consult psycholoog 60 min',familie:'consultatie',tarief:78,duur:60,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac4',naam:'Kort consult psychiater',familie:'consultatie',tarief:65,duur:40,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac5',naam:'Consult psychiater 60 min',familie:'consultatie',tarief:100,duur:60,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac6',naam:'EEG',familie:'technisch',tarief:93,duur:null,duurDeclarant:8,duurPersoneel:15,routing:'afdracht'},
+  {id:'ac7',naam:'MDO met arts',familie:'mdo',tarief:75,duur:20,duurDeclarant:null,duurPersoneel:null,routing:'cappuccino'},
+  {id:'ac8',naam:'Groepssessie (per hoofd)',familie:'groep',tarief:45,duur:90,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
+  {id:'ac9',naam:'Avondtoeslag',familie:'toeslag',tarief:30,duur:null,duurDeclarant:null,duurPersoneel:null,routing:'instelbaar'},
+  {id:'ac10',naam:'Administratieve kost',familie:'admin',tarief:3.95,duur:null,duurDeclarant:null,duurPersoneel:null,routing:'cappuccino'},
+];
+
+let team=DEFAULT_TEAM.map(p=>({...p}));
+let slots={};
+function mkDef(){return[[true,true,false],[true,true,false],[true,false,false],[true,true,false],[true,false,false]];}
+team.forEach(p=>slots[p.id]=mkDef());
+let kostenData=DEFAULT_KOSTEN.map(k=>({...k}));
+let huisvesting={...DEFAULT_HUISVESTING};
+let mandaten=DEFAULT_MANDATEN.map(m=>({...m}));
+let personMandaten={},werkelijkeCons={};
+let cappData={...DEFAULT_CAPP};
+let mdoConfig={...DEFAULT_MDO_CONFIG};
+let mdoBookings=[]; // [{id, day:0-4, startHour:float (uren sinds middernacht), durationHours:float}]
+let mdoBlokken={}; // {pid: aantalMDOsPerWeek} — aantal MDO-sessies/cliëntbesprekingen per week per teamlid
+let cappOptIn={}; // {pid: true/false} — deelname aan cappuccinopool. Default true voor zelfstandigen.
+let acts=DEFAULT_ACTS.map(a=>({...a}));
+let personMix={};        // {pid:[{actId,pct}]}
+let personTechnisch={};  // {pid:{actId:count}}
+let personMDO={};        // {pid:{actId:perWeek}}
+let personAdmin={};      // {pid:{actId:perMaand}}
+let personAvond={};      // {pid:{actId:routing}}
+
+function openModal(){document.getElementById('save-modal').classList.add('open');}
+function closeModal(){document.getElementById('save-modal').classList.remove('open');document.getElementById('copy-confirm').style.display='none';}
+function copyJSON(){const ta=document.getElementById('modal-json');ta.select();try{document.execCommand('copy');}catch(e){navigator.clipboard&&navigator.clipboard.writeText(ta.value);}document.getElementById('copy-confirm').style.display='block';}
+
+function getOverlegFromDOM(){const g=id=>+(document.getElementById(id)?.value)||0;return{opstart:g('p-opstart')||15,ntraject:g('p-ntraject')||2,mintraject:g('p-mintraject')||15,mdofreq:g('p-mdofreq')||5,mdomin:g('p-mdomin')||15,trajlen:g('p-trajlen')||20,consdur:g('p-consdur')||60};}
+function getCappFromDOM(){return{pctL1:+(document.getElementById('capp-pct-l1')?.value)||30,pctL2:+(document.getElementById('capp-pct-l2')?.value)||30,pctL3:+(document.getElementById('capp-pct-l3')?.value)||20,pctL4cap:+(document.getElementById('capp-pct-l4cap')?.value)||20,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
+function buildState(){return{version:6,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn))};}
+function applyState(st){
+  team=(st.team||DEFAULT_TEAM.map(p=>({...p}))).map(p=>({type:'zelfstandige',...p}));
+  slots=st.slots||{};team.forEach(p=>{if(!slots[p.id])slots[p.id]=mkDef();});
+  kostenData=(st.kostenData||DEFAULT_KOSTEN.map(k=>({...k}))).map(k=>({periode:'mnd',...k}));
+  if(st.huisvesting){huisvesting={...DEFAULT_HUISVESTING,...st.huisvesting};}
+  else{
+    // migratie uit oude state: k1=huur, k2=afschrijving renovatie
+    const k1=kostenData.find(k=>k.id==='k1'||/huur.*pand/i.test(k.naam||'')),k2=kostenData.find(k=>k.id==='k2'||/afschrijv.*(renov|verbouw|inricht)/i.test(k.naam||''));
+    huisvesting={...DEFAULT_HUISVESTING};
+    if(k1){huisvesting.maandhuur=Math.round(maandBedrag(k1));kostenData=kostenData.filter(k=>k!==k1);}
+    if(k2){const mnd=maandBedrag(k2);huisvesting.verbouwingBedrag=Math.round(mnd*12*huisvesting.verbouwingJaren);kostenData=kostenData.filter(k=>k!==k2);}
+  }
+  mandaten=st.mandaten||DEFAULT_MANDATEN.map(m=>({...m}));normalizeMandaten();
+  personMandaten=st.personMandaten||{};werkelijkeCons=st.werkelijkeCons||{};
+  cappData={...DEFAULT_CAPP,...(st.cappData||{})};
+  acts=(st.acts||DEFAULT_ACTS.map(a=>({...a}))).map(a=>({routing:'afdracht',...a}));
+  personMix=st.personMix||{};personTechnisch=st.personTechnisch||{};
+  personMDO=st.personMDO||{};personAdmin=st.personAdmin||{};personAvond=st.personAvond||{};
+  mdoConfig={...DEFAULT_MDO_CONFIG,...(st.mdoConfig||{})};
+  mdoBookings=Array.isArray(st.mdoBookings)?JSON.parse(JSON.stringify(st.mdoBookings)):[];
+  mdoBlokken=st.mdoBlokken||{};
+  cappOptIn=st.cappOptIn||{};
+  const ov={...DEFAULT_OVERLEG,...(st.overleg||{})};
+  Object.entries(ov).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});
+  if(st.bureauLimit){const bl=document.getElementById('bureau-limit');if(bl)bl.value=st.bureauLimit;}
+  const sc=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  sc('capp-pct-l1',cappData.pctL1);sc('capp-pct-l2',cappData.pctL2);sc('capp-pct-l3',cappData.pctL3);sc('capp-pct-l4cap',cappData.pctL4cap);sc('capp-overschot-manual',cappData.overschotManual||'');
+  recomputeIdCtr();
+}
+function lsAutoSave(){try{localStorage.setItem(LS_KEY,JSON.stringify(buildState()));}catch(e){}}
+function lsLoad(){try{const r=localStorage.getItem(LS_KEY);if(r){applyState(JSON.parse(r));return true;}}catch(e){}return false;}
+function setStatus(t,c){const el=document.getElementById('save-status');if(el){el.textContent=t;el.className='save-status'+(c?' '+c:'');}}
+function onAnyChange(){lsAutoSave();setStatus('✓ Opgeslagen','saved');}
+function exportJSON(){document.getElementById('modal-json').value=JSON.stringify(buildState(),null,2);openModal();}
+function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{applyState(JSON.parse(e.target.result));refreshAll();lsAutoSave();setStatus('✓ Geladen','saved');}catch(err){alert('Fout: '+err.message);}};r.readAsText(f);inp.value='';}
+function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
+
+function clr(i){return COLORS[i%COLORS.length];}
+function fmt(n){return'€\u202F'+Math.round(n).toLocaleString('nl-BE');}
+function ohPct(){const g=id=>+(document.getElementById(id)?.value)||0;const op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60,oh=op+nt*mt+Math.floor(tl/mf)*mm;return oh/(oh+tl*cd);}
+function wkPerMaand(p){return(p.wkjr||46)/12;}
+function dagdelen(p){return(slots[p.id]||[]).reduce((s,d)=>s+d.reduce((sb,b)=>sb+(b?1:0),0),0);}
+function avondDelen(p){return(slots[p.id]||[]).reduce((s,d)=>s+(d[2]?1:0),0);}
+function vzwPerMaand(p){return p.tarief*p.cons*(1-ohPct())*(p.pct/100)*dagdelen(p)*wkPerMaand(p);}
+function persNettoPerMaand(p){return p.tarief*p.cons*(1-ohPct())*(1-p.pct/100)*dagdelen(p)*wkPerMaand(p);}
+function maandBedrag(k){return k.periode==='jr'?(+k.bedrag||0)/12:(+k.bedrag||0);}
+function annuiteit(P,jaarRente,jaren){if(P<=0||jaren<=0)return 0;const n=jaren*12,i=(+jaarRente||0)/100/12;if(i===0)return P/n;return P*i*Math.pow(1+i,n)/(Math.pow(1+i,n)-1);}
+function hvTeLenen(){return Math.max(0,(+huisvesting.aankoopprijs||0)-(+huisvesting.eigenInbreng||0));}
+function hvBasisMnd(){if(huisvesting.type==='aankoop')return annuiteit(hvTeLenen(),huisvesting.rentevoet,+huisvesting.leningJaren||0);return+huisvesting.maandhuur||0;}
+function hvVerbouwingMnd(){const b=+huisvesting.verbouwingBedrag||0,j=+huisvesting.verbouwingJaren||0;if(b<=0||j<=0)return 0;return b/(j*12);}
+function hvMaandlast(){return hvBasisMnd()+hvVerbouwingMnd();}
+function hvNotarisCash(){if(huisvesting.type!=='aankoop')return 0;return(+huisvesting.aankoopprijs||0)*((+huisvesting.registratie||0)/100);}
+function totalKosten(){return kostenData.reduce((s,k)=>s+maandBedrag(k),0)+hvMaandlast();}
+function slotCount(di,bi){return team.filter(p=>slots[p.id]?.[di]?.[bi]).length;}
+function bureauLim(){return+(document.getElementById('bureau-limit')?.value)||8;}
+function badgeCls(n){if(!n)return'bempty';const l=bureauLim();if(n>l)return'bover';if(n>=l*.75)return'bwarn';return'bok';}
+function cpbForAct(act){return Math.floor(BLOK_MIN/(act.duur||60));}
+
+function mixGewogenTarief(p){
+  const mix=personMix[p.id]||[];if(!mix.length)return null;
+  let totPct=0,totTar=0;
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const pct=+m.pct||0;totPct+=pct;totTar+=pct*act.tarief;}
+  return totPct>0?totTar/totPct:null;
+}
+function mixGewogenCons(p){
+  const mix=personMix[p.id]||[];if(!mix.length)return null;
+  let totPct=0,totCons=0;
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const pct=+m.pct||0;totPct+=pct;totCons+=pct*cpbForAct(act);}
+  return totPct>0?totCons/totPct:null;
+}
+
+function vzwPerMaandMixed(p){
+  const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
+  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct(),afd=p.pct/100;
+  let tot=0;
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*afd*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;tot+=cnt*dd*wk*act.tarief*afd;}
+  return tot;
+}
+function persNettoMixed(p){
+  const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
+  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct(),pers=1-p.pct/100;
+  let tot=0;
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*pers*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;tot+=cnt*dd*wk*act.tarief*pers;}
+  return tot;
+}
+function vzwActual(p){return(personMix[p.id]||[]).length>0?vzwPerMaandMixed(p):vzwPerMaand(p);}
+function nettoActual(p){return(personMix[p.id]||[]).length>0?persNettoMixed(p):persNettoPerMaand(p);}
+function brutoEurPerBlok(p){
+  // Bruto-tariefopbrengst per blok (vóór afdracht-%, ná overhead). Gewogen mix of standaard.
+  const oh=ohPct();
+  const mix=personMix[p.id]||[];
+  if(mix.length>0){
+    let tot=0;
+    for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=(+m.pct/100)*cpbForAct(act)*act.tarief;}
+    return tot*(1-oh);
+  }
+  return(p.tarief||0)*(p.cons||0)*(1-oh);
+}
+function afdrachtEurPerBlok(p){return brutoEurPerBlok(p)*(p.pct/100);}
+function isCappOptIn(p){return p.type!=='bediende'&&cappOptIn[p.id]!==false;}
+function brutoVzwPotentieelMnd(){
+  // Som over zelfstandigen van (bruto €/blok × blokken/wk × wk/mnd) = volledige potentiële afdracht bij 100%
+  let tot=0;
+  for(const p of team){if(p.type==='bediende')continue;const dd=dagdelen(p);if(!dd)continue;tot+=brutoEurPerBlok(p)*dd*wkPerMaand(p);}
+  return tot;
+}
+function breakEvenPct(){
+  const bruto=brutoVzwPotentieelMnd();
+  if(bruto<=0)return null;
+  return(totalKosten()/bruto)*100;
+}
+function actueelGewogenPct(){
+  // Gewogen gemiddelde van pct, naar gewicht van bruto/maand
+  let totBruto=0,totAfd=0;
+  for(const p of team){if(p.type==='bediende')continue;const dd=dagdelen(p);if(!dd)continue;const b=brutoEurPerBlok(p)*dd*wkPerMaand(p);totBruto+=b;totAfd+=b*(p.pct/100);}
+  return totBruto>0?(totAfd/totBruto)*100:0;
+}
+function totalVzw(){return team.reduce((s,p)=>s+vzwActual(p),0);}
+function mdoCappIncome(){let t=0;for(const[pid,m]of Object.entries(personMDO)){const p=team.find(x=>x.id===pid);if(!p)continue;for(const[aId,pw]of Object.entries(m)){const act=acts.find(a=>a.id===aId);if(act&&pw)t+=pw*act.tarief*wkPerMaand(p);}}return t;}
+function mdoSessiesPerBlok(){return(+mdoConfig.blokUren||0)*(+mdoConfig.mdoPerUur||0);}
+function mdoTariefAct(){const a=acts.find(x=>x.familie==='mdo');return a?+a.tarief||0:75;}
+function mdoBlokIncome(){
+  // Inkomsten = som per teamlid van (MDO's per week × tarief × wk/maand). Eén MDO = 1 cliëntbespreking.
+  const tarief=mdoTariefAct();
+  if(tarief<=0)return 0;
+  let tot=0;
+  for(const pid in mdoBlokken){
+    const mdos=+mdoBlokken[pid]||0;
+    const p=team.find(x=>x.id===pid);
+    if(!p||!mdos)continue;
+    tot+=mdos*tarief*wkPerMaand(p);
+  }
+  return tot;
+}
+function teamMdoBlokkenTot(){return Object.values(mdoBlokken).reduce((s,v)=>s+(+v||0),0);}
+function mdoTotaalGewenst(){
+  // Som van MDO's per week uit Mix (nieuwe blok-input) + losse MDO-acts (oude personMDO)
+  let tot=teamMdoBlokkenTot();
+  for(const pid in personMDO){
+    const obj=personMDO[pid]||{};
+    for(const aId in obj){const act=acts.find(a=>a.id===aId&&a.familie==='mdo');if(act)tot+=+obj[aId]||0;}
+  }
+  return tot;
+}
+function mdoUrenIngepland(){return mdoBookings.reduce((s,b)=>s+(+b.durationHours||0),0);}
+function mdoSessiesIngepland(){return mdoUrenIngepland()*(+mdoConfig.mdoPerUur||0);}
+
+// Tijden van consultatieblokken (uren sinds middernacht): VM 8:30-12:30, NM 13:30-17:30, Av 18:00-22:00
+const CONS_BLOK_TIMES=[[8.5,12.5],[13.5,17.5],[18.0,22.0]];
+function fmtHour(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+function intersects(s1,e1,s2,e2){return s1<e2&&s2<e1;}
+function getOverlapConsBlokIdxs(s,e){const r=[];CONS_BLOK_TIMES.forEach((t,i)=>{if(intersects(s,e,t[0],t[1]))r.push(i);});return r;}
+function mdoBureauBezet(day,s,e){const bidx=getOverlapConsBlokIdxs(s,e);if(!bidx.length)return 0;return Math.max(...bidx.map(b=>slotCount(day,b)));}
+function mdoBureauVrij(day,s,e){return mdoBureauBezet(day,s,e)<bureauLim();}
+function mdoBookingOverlap(day,s,e,ignoreId){return mdoBookings.some(b=>b.day===day&&b.id!==ignoreId&&intersects(s,e,b.startHour,b.startHour+b.durationHours));}
+function mdoDeelnemers(day,s,e){
+  // Teamleden die GEEN consultatie-conflict hebben tijdens MDO. Bedienden uitgesloten van pool, maar mogen wel deelnemen praktisch — voor pool-toewijzing tonen we toch alle types.
+  const bidx=getOverlapConsBlokIdxs(s,e);
+  return team.filter(p=>{for(const bi of bidx){if(slots[p.id]?.[day]?.[bi])return false;}return true;}).map(p=>{const aanwezig=(slots[p.id]?.[day]||[]).some(x=>x);return{p,aanwezig};});
+}
+function mdoSlotInBooking(day,h){return mdoBookings.find(b=>b.day===day&&h>=b.startHour&&h<b.startHour+b.durationHours);}
+function adminCappIncome(){let t=0;for(const[,am]of Object.entries(personAdmin)){for(const[aId,pm]of Object.entries(am)){const act=acts.find(a=>a.id===aId);if(act&&pm)t+=act.tarief*pm;}}return t;}
+function avondCappIncome(){let t=0;for(const p of team){const av=personAvond[p.id]||{};for(const[aId,r]of Object.entries(av)){if(r!=='cappuccino')continue;const act=acts.find(a=>a.id===aId);if(act)t+=avondDelen(p)*wkPerMaand(p)*act.tarief;}}return t;}
+function cappPool(){const om=document.getElementById('capp-overschot-manual')?.value;if(om&&om!=='')return Math.max(0,+om||0);return Math.max(0,totalVzw()-totalKosten())+mdoCappIncome()+mdoBlokIncome()+adminCappIncome()+avondCappIncome();}
+
+function calcCapp(){
+  const pool=cappPool(),dln=team.filter(p=>isCappOptIn(p)&&dagdelen(p)>0);
+  if(!dln.length)return null;
+  const pL1=(+(document.getElementById('capp-pct-l1')?.value)||30)/100,pL2=(+(document.getElementById('capp-pct-l2')?.value)||30)/100,pL3=(+(document.getElementById('capp-pct-l3')?.value)||20)/100,pL4cap=(+(document.getElementById('capp-pct-l4cap')?.value)||20)/100,pL4=pL4cap*(pL1+pL2+pL3);
+  const dd=dln.map(p=>dagdelen(p)),totDD=dd.reduce((s,x)=>s+x,0);
+  const L1=dd.map(x=>totDD?(x/totDD)*pL1*pool:0);
+  const verwacht=dln.map(p=>dagdelen(p)*p.cons*wkPerMaand(p)),werkelijk=dln.map(p=>+(werkelijkeCons[p.id]||0));
+  const ratios=dln.map((p,i)=>verwacht[i]?Math.min(werkelijk[i]/verwacht[i],1.25):0),totRatio=ratios.reduce((s,r)=>s+r,0);
+  const L2=ratios.map(r=>totRatio?(r/totRatio)*pL2*pool:0);
+  const mp=dln.map(p=>(personMandaten[p.id]||[]).reduce((s,mid)=>{const m=mandaten.find(x=>x.id===mid);return s+(m?+m.punten:0);},0)),totMP=mp.reduce((s,x)=>s+x,0);
+  const L3=mp.map(x=>totMP?(x/totMP)*pL3*pool:0);
+  const inc=dln.map(p=>p.tarief*dagdelen(p)),sortedIdx=[...inc.keys()].sort((a,b)=>inc[a]-inc[b]),L4pts=new Array(dln.length).fill(0);
+  sortedIdx.forEach((oi,ri)=>{L4pts[oi]=dln.length-ri;});
+  const totL4pts=L4pts.reduce((s,x)=>s+x,0),L4=L4pts.map(x=>totL4pts?(x/totL4pts)*pL4*pool:0);
+  const totals=dln.map((_,i)=>L1[i]+L2[i]+L3[i]+L4[i]),totPool=totals.reduce((s,x)=>s+x,0);
+  return{dln,pool,pL1,pL2,pL3,pL4,L1,L2,L3,L4,totals,totPool,verwacht,werkelijk,ratios,mp,inc,L4pts};
+}
+
+function renderFin(){
+  const k=totalKosten(),vzw=totalVzw(),r=vzw-k;
+  document.getElementById('fk').textContent=fmt(k);document.getElementById('fi').textContent=fmt(vzw);
+  const el=document.getElementById('fr');el.textContent=(r>=0?'+':'')+fmt(r);el.className='sum-val '+(r>=0?'green':'red');
+  document.getElementById('fin-note').textContent='Overhead: '+(ohPct()*100).toFixed(1)+'% niet-factureerbaar. ☕ pool-payout maandelijks uit cappuccino-verdeling.';
+  // Break-even indicator
+  const beEl=document.getElementById('fin-breakeven');
+  if(beEl){
+    const be=breakEvenPct(),act=actueelGewogenPct();
+    if(be===null){beEl.className='be-indicator unknown';beEl.innerHTML='<span>⚠️ Geen consultatiepotentieel berekenbaar (geen tarief/blokken ingevuld). Break-even-% kan niet bepaald worden.</span>';}
+    else{
+      const haalbaar=be<=100;
+      const huidigOk=act>=be;
+      const cls=!haalbaar?'bad':(huidigOk?'ok':'bad');
+      const pillCls=huidigOk?'ok':'bad';
+      beEl.className='be-indicator '+cls;
+      beEl.innerHTML='<span>📊 <strong>Break-even bij gemiddeld '+be.toFixed(1)+'%</strong> afdracht voor iedereen (= '+fmt(k)+' / '+fmt(brutoVzwPotentieelMnd())+' bruto)</span>'
+        +'<span style="margin-left:auto">Huidig gewogen gemiddelde: <span class="be-pill '+pillCls+'">'+act.toFixed(1)+'%</span></span>'
+        +(!haalbaar?'<div style="flex-basis:100%;font-size:11px;margin-top:4px;color:#b91c1c">⚠️ Break-even > 100% — kosten overstijgen het maximale bruto-potentieel. Verlaag kosten of verhoog teamcapaciteit/tarieven.</div>':'');
+    }
+  }
+  const vpkW=team.filter(p=>p.pct===0&&dagdelen(p)>0);
+  document.getElementById('fin-alerts').innerHTML=vpkW.map(p=>'<div class="alert alert-warn">⚠️ <strong>'+p.naam+'</strong> heeft afdracht 0% — controleer kostenpost.</div>').join('');
+  // Cappuccino payouts per persoon ophalen
+  const cappRes=calcCapp(),cappMap={};
+  if(cappRes){cappRes.dln.forEach((p,i)=>{cappMap[p.id]=cappRes.totals[i];});}
+  document.getElementById('fin-tbody').innerHTML=team.map((p,pi)=>{
+    const dd=dagdelen(p),vzwM=vzwActual(p),persM=nettoActual(p),isBed=p.type==='bediende';
+    const cappM=cappMap[p.id]||0,totaalM=persM+cappM;
+    const bruto=brutoEurPerBlok(p),eurBlok=afdrachtEurPerBlok(p),eurWeek=eurBlok*dd,maxEur=Math.max(1,Math.round(bruto*10)/10);
+    const prof=isBed
+      ?'<span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:4px;font-weight:600">Bediende</span>'
+      :'<div style="display:flex;flex-direction:column;gap:3px;min-width:200px">'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+          +'<input type="range" data-fin-pct="'+p.id+'" min="0" max="100" step="0.1" value="'+p.pct+'" style="flex:1;cursor:pointer;accent-color:#4f46e5" '
+          +'oninput="updateFinLabels(\''+p.id+'\',+this.value,\'pct\')" '
+          +'onchange="setPctSlider(\''+p.id+'\',+this.value)">'
+          +'<span id="fin-pct-lbl-'+p.id+'" style="font-weight:700;color:#4f46e5;font-size:11px;min-width:42px;text-align:right">'+(+p.pct).toFixed(1)+'%</span>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+          +'<input type="range" data-fin-eur="'+p.id+'" min="0" max="'+maxEur+'" step="0.5" value="'+eurBlok.toFixed(1)+'" style="flex:1;cursor:pointer;accent-color:#059669" '
+          +'oninput="updateFinLabels(\''+p.id+'\',+this.value,\'eur\')" '
+          +'onchange="setEurBlokSlider(\''+p.id+'\',+this.value)">'
+          +'<span id="fin-eur-lbl-'+p.id+'" style="font-weight:600;color:#059669;font-size:10.5px;min-width:62px;text-align:right">€'+Math.round(eurBlok)+'/blok</span>'
+        +'</div>'
+        +'<div id="fin-week-lbl-'+p.id+'" style="font-size:10px;color:#9ca3af;text-align:right;margin-top:-1px">'+(dd?'= €'+Math.round(eurWeek)+'/wk':'—')+'</div>'
+      +'</div>';
+    const pers=isBed?'<span style="color:#d1d5db">—</span>':(dd?'<span style="color:#6b7280">'+fmt(persM)+'</span>':'—');
+    const optIn=isCappOptIn(p);
+    const toggle=isBed?'':'<button class="capp-toggle '+(optIn?'on':'off')+'" onclick="toggleCappOptIn(\''+p.id+'\')" title="'+(optIn?'In cappuccino-pool — klik om uit te schakelen':'Niet in pool — klik om mee te doen')+'">'+(optIn?'☕ in':'⊘ uit')+'</button>';
+    const cappBedrag=!optIn||isBed?'<span style="color:#d1d5db">—</span>':(cappM>0?'<span style="color:#7c3aed;font-weight:600">+'+fmt(cappM)+'</span>':'<span style="color:#d1d5db">—</span>');
+    const capp=isBed?'<span style="color:#d1d5db">—</span>':'<div style="display:flex;align-items:center;justify-content:flex-end;gap:5px">'+toggle+cappBedrag+'</div>';
+    const totaalIncl=optIn?totaalM:persM;
+    const totaal=isBed?'<span style="color:#d1d5db">—</span>':(dd?'<span class="netto-pill">'+fmt(totaalIncl)+'</span>':'—');
+    return'<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+clr(pi)+';margin-right:5px;vertical-align:middle"></span>'+p.naam+'</td><td>'+prof+'</td><td style="text-align:right;font-weight:600;color:'+(dd?'#4f46e5':'#d1d5db')+'">'+dd+'</td><td style="text-align:right;font-weight:600">'+(dd?fmt(vzwM):'—')+'</td><td style="text-align:right;font-size:11px">'+pers+'</td><td style="text-align:right;font-size:11px">'+capp+'</td><td style="text-align:right;font-weight:600">'+totaal+'</td></tr>';
+  }).join('');
+  const bars=team.map(p=>vzwActual(p));let cum=0;const cumL=bars.map(v=>{cum+=v;return cum;});
+  if(finChart)finChart.destroy();
+  finChart=new Chart(document.getElementById('fin-chart').getContext('2d'),{data:{labels:team.map(p=>p.naam.split(' ')[0]),datasets:[{type:'bar',label:'VZW/mnd',data:bars,backgroundColor:team.map((_,i)=>clr(i)+'bb'),borderColor:team.map((_,i)=>clr(i)),borderWidth:1,borderRadius:4,yAxisID:'y'},{type:'line',label:'Cumulatief',data:cumL,borderColor:'#4f46e5',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3,yAxisID:'y'},{type:'line',label:'Break-even',data:Array(team.length).fill(totalKosten()),borderColor:'#ef4444',backgroundColor:'transparent',borderWidth:2,borderDash:[5,3],pointRadius:0,yAxisID:'y'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:7}}},scales:{y:{ticks:{callback:v=>'€'+Math.round(v/1000)+'k',font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9.5}}}}}});
+}
+
+function renderRooster(){
+  let h='<thead><tr><th class="name-corner" rowspan="2"></th>';DAYS.forEach(d=>{h+='<th class="day-th" colspan="3">'+d+'</th>';});h+='</tr><tr>';for(let di=0;di<5;di++)BLK.forEach((b,bi)=>{h+='<th class="blk-th'+(bi===0?' fd':'')+'">'+b+'</th>';});h+='</tr></thead><tbody>';
+  team.forEach((p,pi)=>{const c=clr(pi);h+='<tr class="prow"><td class="nm-cell"><div class="color-dot" style="background:'+c+'"></div><span title="'+p.naam+'">'+p.naam+'</span><button class="btn-del" onclick="delPersoon(\''+p.id+'\')">×</button></td>';for(let di=0;di<5;di++)for(let bi=0;bi<3;bi++){const on=slots[p.id]?.[di]?.[bi];h+='<td class="slot-td'+(bi===0?' fd':'')+'"><button class="slot-btn'+(on?' on':'')+'" style="'+(on?'background:'+c+';':'')+'" onclick="toggleSlot(\''+p.id+'\','+di+','+bi+')">'+(on?'✓':'')+'</button></td>';}h+='</tr>';});
+  h+='<tr class="brow"><td class="name-corner" style="font-size:10px;font-weight:700;color:#6b7280;padding:4px 7px;text-align:left">Bureaus</td>';for(let di=0;di<5;di++)for(let bi=0;bi<3;bi++){const n=slotCount(di,bi);h+='<td class="bureau-td'+(bi===0?' fd':'')+'"><div class="bbadge '+badgeCls(n)+'">'+(n||'—')+'</div></td>';}h+='</tr></tbody>';
+  document.getElementById('rt').innerHTML=h;document.getElementById('rooster-note').textContent='Overhead: '+(ohPct()*100).toFixed(1)+'% niet-factureerbaar.';
+  renderMdoConfig();
+  renderMdoAgenda();
+  const counts=[],lbs=[];for(let di=0;di<5;di++)for(let bi=0;bi<3;bi++){counts.push(slotCount(di,bi));lbs.push(DS[di]+' '+BLK[bi]);}
+  const lim=bureauLim(),nonZ=counts.filter(x=>x>0),peak=Math.max(...counts,0),avg=nonZ.length?(nonZ.reduce((a,b)=>a+b,0)/nonZ.length):0,over=counts.filter(x=>x>lim).length;
+  document.getElementById('bstat').innerHTML='<div class="stat-card"><div class="stat-label">Piekbezetting</div><div class="stat-val" style="color:'+(peak>lim?'#dc2626':peak>=lim*.75?'#d97706':'#059669')+'">'+peak+'</div></div><div class="stat-card"><div class="stat-label">Gem. bezetting</div><div class="stat-val">'+avg.toFixed(1)+'</div></div><div class="stat-card"><div class="stat-label">Blokken >limiet</div><div class="stat-val" style="color:'+(over?'#dc2626':'#059669')+'">'+over+'</div></div>';
+  const bgs=counts.map(n=>!n?'#f3f4f6':n>lim?'#fca5a5':n>=lim*.75?'#fde68a':'#86efac'),brd=counts.map(n=>!n?'#e5e7eb':n>lim?'#f87171':n>=lim*.75?'#fbbf24':'#4ade80');
+  if(rChart)rChart.destroy();rChart=new Chart(document.getElementById('rooster-chart').getContext('2d'),{type:'bar',data:{labels:lbs,datasets:[{label:'Aanwezig',data:counts,backgroundColor:bgs,borderColor:brd,borderWidth:1.5,borderRadius:4},{type:'line',label:'Limiet ('+lim+')',data:Array(15).fill(lim),borderColor:'#ef4444',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,2],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:7}}},scales:{y:{min:0,max:Math.max(lim+2,peak+1),ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9.5}},grid:{display:false}}}}});
+}
+
+function renderMdoConfig(){
+  const ses=mdoSessiesPerBlok(),tar=mdoTariefAct(),gewenst=mdoTotaalGewenst(),mogelijk=mdoSessiesIngepland(),inkomst=mdoBlokIncome();
+  const si=document.getElementById('mdo-sessies-info');if(si)si.textContent=ses+' MDO\'s/blok';
+  const ti=document.getElementById('mdo-tarief-info');if(ti)ti.textContent='€'+tar+'/MDO';
+  const bi=document.getElementById('mdo-blkdur-info');if(bi)bi.textContent=(+mdoConfig.blokUren||0)+'u';
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el&&document.activeElement!==el)el.value=v;};
+  sv('mdo-blokUren',mdoConfig.blokUren);sv('mdo-mdoPerUur',mdoConfig.mdoPerUur);
+  const mo=document.getElementById('mdo-overzicht');
+  if(!mo)return;
+  const ok=mogelijk>=gewenst;
+  const teamRows=team.filter(p=>p.type!=='bediende'&&(+mdoBlokken[p.id]||0)>0).map(p=>{const m=+mdoBlokken[p.id]||0;return'<div style="display:flex;justify-content:space-between;padding:1px 0;color:#6b7280;font-size:11.5px"><span>'+p.naam+'</span><span>'+m+' MDO'+(m>1?'\'s':'')+'/wk</span></div>';}).join('');
+  // losse MDO-acts uit personMDO
+  let losseRows='';
+  for(const pid in personMDO){
+    const p=team.find(x=>x.id===pid);if(!p)continue;
+    for(const aId in personMDO[pid]){const act=acts.find(a=>a.id===aId&&a.familie==='mdo');const n=+personMDO[pid][aId]||0;if(act&&n>0)losseRows+='<div style="display:flex;justify-content:space-between;padding:1px 0;color:#9ca3af;font-size:11px"><span>'+p.naam+' — '+act.naam+'</span><span>'+n+'/wk</span></div>';}
+  }
+  const urenNodig=ses>0?(gewenst/(+mdoConfig.mdoPerUur||1)):0;
+  const blokkenNodig=(+mdoConfig.blokUren||0)>0?urenNodig/(+mdoConfig.blokUren||1):0;
+  mo.innerHTML='<div style="font-weight:600;color:#7c3aed;margin-bottom:5px">🗣 MDO-overzicht</div>'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Totaal gewenste MDO\'s/week</span><strong>'+gewenst+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280;font-size:11px"><span>→ Uren MDO nodig</span><span>'+urenNodig.toFixed(2)+' u/wk ≈ '+blokkenNodig.toFixed(2)+' blokken</span></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>MDO-sessies mogelijk in agenda</span><strong style="color:'+(ok?'#059669':'#dc2626')+'">'+mogelijk+'/wk '+(ok?'✓':'⚠️')+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280;font-size:11px"><span>→ Geplande MDO-uren</span><span>'+mdoUrenIngepland().toFixed(2)+' u/wk in '+mdoBookings.length+' blok'+(mdoBookings.length===1?'':'ken')+'</span></div>'
+    +(teamRows?'<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e5e7eb;font-size:11px;color:#9ca3af;margin-bottom:3px">Per teamlid (Mix-tab)</div>'+teamRows:'')
+    +(losseRows?'<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e5e7eb;font-size:11px;color:#9ca3af;margin-bottom:3px">Losse MDO-acts (oude manier)</div>'+losseRows:'')
+    +'<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:5px;border-top:1px solid #e5e7eb;font-weight:700;color:#059669"><span>Pool-inkomst MDO\'s/mnd</span><span>'+fmt(inkomst)+'</span></div>'
+    +(!ok&&gewenst>0?'<div style="font-size:10.5px;color:#dc2626;padding:3px 0 0;font-style:italic">⚠️ Te weinig MDO-tijd in agenda voor alle gewenste MDO\'s.</div>':'');
+}
+
+function renderMdoAgenda(){
+  const wrap=document.getElementById('mdo-agenda-wrap');
+  if(!wrap)return;
+  const startH=8.0,endH=21.0,step=0.5;
+  const slotsList=[];for(let h=startH;h<endH;h+=step)slotsList.push(h);
+  let h2='<table class="mdo-ag"><thead><tr><th class="th-time">Tijd</th>';
+  DAYS.forEach(d=>h2+='<th>'+d+'</th>');
+  h2+='</tr></thead><tbody>';
+  slotsList.forEach(sH=>{
+    h2+='<tr><td class="td-time">'+fmtHour(sH)+'</td>';
+    for(let di=0;di<5;di++){
+      const book=mdoSlotInBooking(di,sH+0.001);
+      if(book){
+        const isStart=Math.abs(sH-book.startHour)<0.01;
+        h2+='<td class="cell-booked'+(isStart?' cell-booked-start':'')+'" onclick="delMdoBooking(\''+book.id+'\')" title="Klik om MDO-blok te verwijderen ('+fmtHour(book.startHour)+'–'+fmtHour(book.startHour+book.durationHours)+')">'+(isStart?'☕':'')+'</td>';
+      } else {
+        const dur=+mdoConfig.blokUren||2,end=sH+dur;
+        const overlapsBooking=mdoBookingOverlap(di,sH,end,null);
+        const overlapsConsCheck=getOverlapConsBlokIdxs(sH,end);
+        const inCons=overlapsConsCheck.length>0;
+        const bureauOk=mdoBureauVrij(di,sH,end);
+        const eindOk=end<=22.0;
+        if(!eindOk||overlapsBooking){
+          h2+='<td style="background:#f3f4f6;cursor:not-allowed" title="'+(eindOk?'overlapt met bestaande MDO':'na 22u')+'"></td>';
+        } else if(inCons&&!bureauOk){
+          h2+='<td class="cell-cons-full" title="Geen vrij bureau tijdens consultatieblok"></td>';
+        } else if(inCons){
+          h2+='<td class="cell-cons-ok" onclick="addMdoBooking('+di+','+sH+')" title="MDO inplannen ('+fmtHour(sH)+'–'+fmtHour(end)+') — bureau vrij"></td>';
+        } else {
+          h2+='<td class="cell-free" onclick="addMdoBooking('+di+','+sH+')" title="MDO inplannen ('+fmtHour(sH)+'–'+fmtHour(end)+') — buiten consultatieblok"></td>';
+        }
+      }
+    }
+    h2+='</tr>';
+  });
+  h2+='</tbody></table>';
+  h2+='<div class="legend-mdo">'
+    +'<div><span class="leg-sq" style="background:#f0fdf4;border:1px solid #86efac"></span>klikbaar (consultatieblok, bureau vrij)</div>'
+    +'<div><span class="leg-sq" style="background:#fff;border:1px solid #e5e7eb"></span>klikbaar (lunch/avond, buiten consultatieblok)</div>'
+    +'<div><span class="leg-sq" style="background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fecaca 3px,#fecaca 6px)"></span>geen vrij bureau</div>'
+    +'<div><span class="leg-sq" style="background:#ddd6fe"></span>MDO ingepland (klik = verwijder)</div>'
+    +'</div>';
+  wrap.innerHTML=h2;
+  // Bookings list met deelnemers
+  const bl=document.getElementById('mdo-bookings-list');
+  if(!bl)return;
+  if(!mdoBookings.length){bl.innerHTML='<p class="note">Nog geen MDO-blokken ingepland.</p>';return;}
+  const sorted=[...mdoBookings].sort((a,b)=>a.day-b.day||a.startHour-b.startHour);
+  bl.innerHTML='<div style="font-weight:600;color:#5b21b6;font-size:12px;margin-bottom:8px">Ingeplande MDO-blokken</div>'+sorted.map(b=>{
+    const eind=b.startHour+b.durationHours;
+    const deelnemers=mdoDeelnemers(b.day,b.startHour,eind);
+    const aanwezig=deelnemers.filter(d=>d.aanwezig);
+    const niet=deelnemers.filter(d=>!d.aanwezig);
+    const mems=aanwezig.map(({p})=>'<span class="mdo-bk-mem">'+p.naam+'</span>').join('');
+    const nietMems=niet.map(({p})=>'<span class="mdo-bk-mem absent">'+p.naam+' (niet aanwezig)</span>').join('');
+    const sessies=(+mdoConfig.mdoPerUur||0)*b.durationHours;
+    return '<div class="mdo-bk-card">'
+      +'<div class="mdo-bk-title">🗣 '+DAYS[b.day]+' '+fmtHour(b.startHour)+'–'+fmtHour(eind)+' <span class="mdo-bk-pill">'+sessies+' MDO\'s</span><button class="btn-del" style="margin-left:auto" onclick="delMdoBooking(\''+b.id+'\')">×</button></div>'
+      +'<div style="font-size:10.5px;color:#6b7280;margin-bottom:4px">Kan deelnemen (geen consultatie-conflict): '+aanwezig.length+' aanwezige + '+niet.length+' niet-aanwezige</div>'
+      +'<div class="mdo-bk-team">'+(mems||'<span style="font-size:10.5px;color:#dc2626">Niemand aanwezig op dat moment</span>')+nietMems+'</div>'
+    +'</div>';
+  }).join('');
+}
+
+function renderTeam(){
+  document.getElementById('team-tbody').innerHTML=team.map((p,pi)=>{
+    const isZ=p.type!=='bediende';
+    const gtar=mixGewogenTarief(p),gcons=mixGewogenCons(p),hasMix=gtar!==null;
+    const tarCell=hasMix
+      ?'<input type="number" value="'+gtar.toFixed(1)+'" readonly title="Automatisch vanuit Mix-tab" style="background:#ede9fe;color:#6d28d9;font-weight:600;cursor:not-allowed">'
+      :'<input type="number" value="'+p.tarief+'" oninput="hv_v(\''+p.id+'\',\'tarief\',+this.value)">';
+    const consCell=hasMix
+      ?'<input type="number" value="'+gcons.toFixed(2)+'" readonly title="Automatisch vanuit Mix-tab" style="background:#ede9fe;color:#6d28d9;font-weight:600;cursor:not-allowed">'
+      :'<input type="number" value="'+p.cons+'" oninput="hv_v(\''+p.id+'\',\'cons\',+this.value)">';
+    return'<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+clr(pi)+';margin-right:5px;vertical-align:middle"></span><input type="text" value="'+p.naam+'" oninput="hv_naam(\''+p.id+'\',this.value)" style="min-width:100px"></td><td><button class="type-badge '+(isZ?'type-z':'type-b')+'" onclick="toggleType(\''+p.id+'\')">'+(isZ?'Z':'B')+'</button></td><td>'+tarCell+'</td><td>'+consCell+'</td><td><input type="number" data-team-pct="'+p.id+'" value="'+p.pct+'" min="0" max="100" oninput="hv_v(\''+p.id+'\',\'pct\',+this.value)"></td><td><input type="number" value="'+p.wkjr+'" min="1" max="52" oninput="hv_v(\''+p.id+'\',\'wkjr\',+this.value)"></td><td><button class="btn-del" onclick="delPersoon(\''+p.id+'\')">×</button></td></tr>';
+  }).join('');
+}
+
+function renderHuisvesting(){
+  const isA=huisvesting.type==='aankoop';
+  const bH=document.getElementById('hv-btn-huur'),bA=document.getElementById('hv-btn-aankoop');
+  if(bH)bH.className='btn-sv'+(isA?'':' primary');if(bA)bA.className='btn-sv'+(isA?' primary':'');
+  const sH=document.getElementById('hv-huur-section'),sA=document.getElementById('hv-aankoop-section');
+  if(sH)sH.style.display=isA?'none':'';if(sA)sA.style.display=isA?'':'none';
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el&&document.activeElement!==el)el.value=v;};
+  sv('hv-maandhuur',huisvesting.maandhuur);sv('hv-aankoopprijs',huisvesting.aankoopprijs);sv('hv-eigenInbreng',huisvesting.eigenInbreng);sv('hv-leningJaren',huisvesting.leningJaren);sv('hv-rentevoet',huisvesting.rentevoet);sv('hv-registratie',huisvesting.registratie);sv('hv-verbouwingBedrag',huisvesting.verbouwingBedrag);sv('hv-verbouwingJaren',huisvesting.verbouwingJaren);
+  const tl=document.getElementById('hv-telenen');if(tl)tl.textContent=fmt(hvTeLenen());
+  const basis=hvBasisMnd(),verb=hvVerbouwingMnd(),tot=basis+verb,notaris=hvNotarisCash(),tlEur=hvTeLenen();
+  let extra='';
+  if(isA){
+    const totBetaald=basis*(+huisvesting.leningJaren||0)*12,rente=Math.max(0,totBetaald-tlEur);
+    extra='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>Te lenen</span><span>'+fmt(tlEur)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>Totaal terugbetaald</span><span>'+fmt(totBetaald)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>Waarvan rente</span><span>'+fmt(rente)+'</span></div>'
+      +(notaris>0?'<div style="display:flex;justify-content:space-between;padding:2px 0;color:#b45309"><span>+ Notaris/registratie (eenmalig cash)</span><span>'+fmt(notaris)+'</span></div>':'');
+  }
+  const r=document.getElementById('hv-result');if(r)r.innerHTML='<div style="background:#f9fafb;border-radius:8px;padding:11px;font-size:12.5px">'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+(isA?'Maandaflossing lening':'Maandhuur')+'</span><strong>'+fmt(basis)+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Afschrijving verbouwing/inrichting</span><strong>'+fmt(verb)+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:5px;border-top:1px solid #e5e7eb;font-weight:700;color:#4f46e5;font-size:13.5px"><span>Maandlast huisvesting</span><span>'+fmt(tot)+'</span></div>'
+    +(extra?'<div style="margin-top:9px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:11.5px">'+extra+'</div>':'')
+    +'</div>';
+}
+function renderKosten(){
+  renderHuisvesting();
+  document.getElementById('kosten-tbody').innerHTML=kostenData.map(k=>{const isJr=k.periode==='jr',mnd=maandBedrag(k),hint=isJr&&k.bedrag?'<span style="font-size:10px;color:#9ca3af;margin-left:4px">= '+fmt(mnd)+'/mnd</span>':'';return'<tr><td><input type="text" value="'+k.naam+'" oninput="kn(\''+k.id+'\',this.value)"></td><td style="white-space:nowrap"><input type="number" value="'+k.bedrag+'" style="width:90px" oninput="kb(\''+k.id+'\',+this.value)"><button onclick="kp(\''+k.id+'\')" style="margin-left:4px;padding:2px 7px;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer;font-size:10.5px;font-weight:600;background:'+(isJr?'#4f46e5':'#f9fafb')+';color:'+(isJr?'#fff':'#6b7280')+'">'+(isJr?'jr':'mnd')+'</button>'+hint+'</td><td><button class="btn-del" onclick="delKost(\''+k.id+'\')">×</button></td></tr>';}).join('');
+  const ov=kostenData.reduce((s,k)=>s+maandBedrag(k),0),hv=hvMaandlast(),tot=ov+hv;
+  document.getElementById('kosten-totaal').innerHTML='Huisvesting: <strong>'+fmt(hv)+'</strong> + overige: <strong>'+fmt(ov)+'</strong> = <strong style="color:#4f46e5">'+fmt(tot)+'</strong> / maand';
+  const vpk=team.filter(p=>p.pct===0&&dagdelen(p)>0),ne=document.getElementById('kosten-vpk-note');
+  if(vpk.length){ne.innerHTML='⚠️ <strong>'+vpk.map(p=>p.naam).join(', ')+'</strong> afdracht 0%.';ne.style.display='block';}else ne.style.display='none';
+}
+function setHvType(t){huisvesting.type=t;renderKosten();renderFin();renderCapp();onAnyChange();}
+function hvUpd(field,v){huisvesting[field]=v;renderHuisvesting();renderFin();renderCapp();onAnyChange();}
+
+function renderOverleg(){
+  const g=id=>+(document.getElementById(id)?.value)||0,op=g('p-opstart')||15,nt=g('p-ntraject')||2,mt=g('p-mintraject')||15,mf=Math.max(1,g('p-mdofreq')||5),mm=g('p-mdomin')||15,tl=g('p-trajlen')||20,cd=g('p-consdur')||60;
+  const ohTot=op+nt*mt+Math.floor(tl/mf)*mm,cons=tl*cd,grand=ohTot+cons,bill=cons/grand,over=ohTot/grand;
+  document.getElementById('oh-bar').innerHTML='<div class="oh-bill" style="width:'+bill*100+'%">'+(bill*100).toFixed(1)+'%</div><div class="oh-over" style="width:'+over*100+'%">'+(over*100).toFixed(1)+'%</div>';
+  document.getElementById('oh-summary').innerHTML='<strong>Overleg/traject:</strong> '+ohTot+' min &nbsp;|&nbsp; <strong>Factureerbaar: <span style="color:#059669">'+(bill*100).toFixed(1)+'%</span></strong>';
+  document.getElementById('impact-tbody').innerHTML=team.map(p=>{const z=p.tarief*p.cons*(p.pct/100),m=z*bill,d=m-z;return'<tr><td>'+p.naam+'</td><td style="text-align:right">'+fmt(z)+'/blok</td><td style="text-align:right">'+fmt(m)+'/blok</td><td style="text-align:right;color:'+(d<-.01?'#dc2626':'#6b7280')+'">'+(d<-.01?'':'+')+fmt(d)+'/blok</td></tr>';}).join('');
+}
+
+function renderCapp(){
+  const vzwInk=totalVzw(),kost=totalKosten(),overschot=vzwInk-kost,surplus=Math.max(0,overschot),mdo=mdoCappIncome(),mdoBlk=mdoBlokIncome(),adm=adminCappIncome(),av=avondCappIncome(),pool=cappPool();
+  const bd=document.getElementById('capp-pool-breakdown');
+  if(bd){
+    let bh='<div style="background:#f9fafb;border-radius:8px;padding:10px;font-size:12px">';
+    bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>VZW afdrachten/inkomsten</span><strong style="color:#1a1a1a">'+fmt(vzwInk)+'</strong></div>';
+    bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#6b7280"><span>− VZW kosten</span><strong style="color:#1a1a1a">'+fmt(kost)+'</strong></div>';
+    bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:1px dashed #e5e7eb;font-weight:700;color:'+(overschot>=0?'#059669':'#dc2626')+'"><span>= VZW overschot</span><span>'+(overschot>=0?'+':'')+fmt(overschot)+(overschot<0?' ⚠️':'')+'</span></div>';
+    if(overschot<0)bh+='<div style="font-size:10.5px;color:#dc2626;padding:2px 0 0;font-style:italic">⚠️ Tekort wordt niet bijgedragen aan pool (afgekapt op €0)</div>';
+    if(mdoBlk>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ 🗣 MDO-blokken</span><strong>'+fmt(mdoBlk)+'</strong></div>';
+    if(mdo>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ MDO losse acts</span><strong>'+fmt(mdo)+'</strong></div>';
+    if(adm>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Admin kosten</span><strong>'+fmt(adm)+'</strong></div>';
+    if(av>0)bh+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:#7c3aed"><span>+ Avondtoeslag → ☕</span><strong>'+fmt(av)+'</strong></div>';
+    bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:'+(pool>0?'#059669':'#dc2626')+'"><span>Totaal pool</span><span>'+fmt(pool)+(pool<=0?' ⚠️':'')+'</span></div></div>';
+    bd.innerHTML=bh;
+  }
+  const pL1=(+(document.getElementById('capp-pct-l1')?.value)||30)/100,pL2=(+(document.getElementById('capp-pct-l2')?.value)||30)/100,pL3=(+(document.getElementById('capp-pct-l3')?.value)||20)/100,pL4cap=(+(document.getElementById('capp-pct-l4cap')?.value)||20)/100,pL4=pL4cap*(pL1+pL2+pL3),pRes=Math.max(0,1-pL1-pL2-pL3-pL4);
+  const barEl=document.getElementById('capp-pool-bar');
+  if(barEl)barEl.innerHTML='<div class="capp-layer-bar"><div class="capp-l1" style="width:'+pL1*100+'%"></div><div class="capp-l2" style="width:'+pL2*100+'%"></div><div class="capp-l3" style="width:'+pL3*100+'%"></div><div class="capp-l4" style="width:'+pL4*100+'%"></div><div class="capp-res" style="width:'+pRes*100+'%"></div></div><div class="capp-legend"><div class="capp-leg"><div class="capp-sq capp-l1"></div>L1 '+fmt(pL1*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l2"></div>L2 '+fmt(pL2*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l3"></div>L3 '+fmt(pL3*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l4"></div>L4 '+fmt(pL4*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-res"></div>Reserve '+fmt(pRes*pool)+'</div></div>';
+  const mdtSum=mandaten.reduce((s,m)=>s+(+m.punten||0),0);
+  const mdtTot=document.getElementById('mdt-totaal');
+  if(mdtTot)mdtTot.innerHTML='Totaal: <strong style="color:'+(Math.abs(mdtSum-MANDAAT_TOT_PTN)<0.5?'#059669':'#dc2626')+'">'+mdtSum.toFixed(1)+'</strong> / 30';
+  document.getElementById('mandaten-tbody').innerHTML=mandaten.map(m=>{
+    const p=+m.punten||0;
+    return'<tr><td><input type="text" value="'+m.naam+'" oninput="mn(\''+m.id+'\',this.value)" style="min-width:160px"></td>'
+      +'<td><div style="display:flex;align-items:center;gap:6px">'
+        +'<input type="range" min="0" max="30" step="0.5" value="'+p.toFixed(1)+'" '
+        +'oninput="document.getElementById(\'mdt-lbl-'+m.id+'\').textContent=(+this.value).toFixed(1)" '
+        +'onchange="setMandaatPuntenLocked(\''+m.id+'\',+this.value)" '
+        +'style="flex:1;cursor:pointer;accent-color:#d97706;min-width:90px">'
+        +'<span id="mdt-lbl-'+m.id+'" style="font-weight:700;color:#d97706;min-width:30px;text-align:right;font-size:11.5px">'+p.toFixed(1)+'</span>'
+      +'</div></td>'
+      +'<td><button class="btn-del" onclick="delMandaat(\''+m.id+'\')">×</button></td></tr>';
+  }).join('');
+  document.getElementById('capp-persoon-tbody').innerHTML=team.map((p,pi)=>{
+    const isBed=p.type==='bediende',dim=isBed?'capp-row-dim':'',dd=dagdelen(p),vw=dd*p.cons*wkPerMaand(p);
+    const hasWC=werkelijkeCons[p.id]!==undefined&&werkelijkeCons[p.id]!==null&&werkelijkeCons[p.id]!=='';
+    const wcRaw=hasWC?+werkelijkeCons[p.id]:vw;  // default werkelijk = verwacht (ratio 1,0)
+    const ratio=vw?Math.min(wcRaw/vw,1.25):1.0;
+    const rc=ratio>=1.2?'#059669':ratio>=0.9?'#374151':ratio>0?'#d97706':'#9ca3af';
+    const werkelijkAfgeleid=Math.round(vw*ratio);
+    const mPts=(personMandaten[p.id]||[]).reduce((s,mid)=>{const m=mandaten.find(x=>x.id===mid);return s+(m?+m.punten:0);},0);
+    const tags=mandaten.map(m=>{const on=(personMandaten[p.id]||[]).includes(m.id);return'<button class="mandaat-tag'+(on?' on':'')+'" onclick="toggleMandaat(\''+p.id+'\',\''+m.id+'\')">'+m.naam.split('/')[0].trim()+'</button>';}).join('');
+    const werkCell=isBed||!vw
+      ?'<span style="color:#d1d5db">—</span>'
+      :'<span style="font-weight:600;color:#374151">'+werkelijkAfgeleid+'</span>';
+    const ratioCell=isBed
+      ?'<span style="font-size:10px;color:#d1d5db">n.v.t.</span>'
+      :!vw
+        ?'<span style="font-size:10px;color:#d1d5db">geen blokken</span>'
+        :'<div style="display:flex;align-items:center;gap:5px">'
+          +'<input type="range" min="0" max="1.25" step="0.01" value="'+ratio.toFixed(2)+'" '
+          +'oninput="document.getElementById(\'capp-ratio-lbl-'+p.id+'\').textContent=(+this.value).toFixed(2);document.getElementById(\'capp-ratio-lbl-'+p.id+'\').style.color=(+this.value)>=1.2?\'#059669\':(+this.value)>=0.9?\'#374151\':(+this.value)>0?\'#d97706\':\'#9ca3af\'" '
+          +'onchange="setRatioSlider(\''+p.id+'\',+this.value)" '
+          +'style="flex:1;cursor:pointer;accent-color:#4f46e5;min-width:70px">'
+          +'<span id="capp-ratio-lbl-'+p.id+'" style="font-weight:700;color:'+rc+';font-size:11.5px;min-width:32px;text-align:right">'+ratio.toFixed(2)+'</span>'
+          +'</div>';
+    return'<tr class="'+dim+'"><td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+clr(pi)+';margin-right:5px;vertical-align:middle"></span>'+p.naam+'</td><td><span class="type-badge '+(isBed?'type-b':'type-z')+'" style="cursor:default">'+(isBed?'B':'Z')+'</span></td><td style="text-align:right;color:#9ca3af">'+Math.round(vw)+'</td><td style="text-align:right">'+werkCell+'</td><td>'+ratioCell+'</td><td>'+(isBed?'<span style="font-size:10px;color:#d1d5db">n.v.t.</span>':tags)+'</td><td style="text-align:right;font-weight:600;color:#d97706">'+(mPts||'—')+'</td></tr>';
+  }).join('');
+  const res=calcCapp(),rdiv=document.getElementById('capp-result-content');
+  if(!res||res.pool<=0){rdiv.innerHTML='<p class="note">Geen pool of geen deelnemende zelfstandigen.</p>';return;}
+  const{dln,pool:p2,L1,L2,L3,L4,totals,totPool}=res;
+  let h='<div class="sum-grid" style="margin-bottom:10px"><div class="sum-card"><div class="sum-label">Pool</div><div class="sum-val neutral">'+fmt(p2)+'</div></div><div class="sum-card"><div class="sum-label">Verdeeld</div><div class="sum-val green">'+fmt(totPool)+'</div></div><div class="sum-card"><div class="sum-label">Reserve VZW</div><div class="sum-val neutral">'+fmt(p2-totPool)+'</div></div></div>';
+  h+='<table><thead><tr><th>Naam</th><th style="text-align:right;color:#7c3aed">L1</th><th style="text-align:right;color:#2563eb">L2</th><th style="text-align:right;color:#d97706">L3</th><th style="text-align:right;color:#c2410c">L4</th><th style="text-align:right">Totaal</th><th style="text-align:right">%</th></tr></thead><tbody>';
+  dln.forEach((p,i)=>{const pct=totPool?totals[i]/totPool:0;h+='<tr><td style="font-weight:500">'+p.naam+'</td><td style="text-align:right;color:#7c3aed">'+fmt(L1[i])+'</td><td style="text-align:right;color:#2563eb">'+fmt(L2[i])+'</td><td style="text-align:right;color:#d97706">'+fmt(L3[i])+'</td><td style="text-align:right;color:#c2410c">'+fmt(L4[i])+'</td><td style="text-align:right;font-weight:700">'+fmt(totals[i])+'</td><td style="text-align:right;color:#6b7280">'+(pct*100).toFixed(1)+'%</td></tr>';});
+  h+='<tr style="border-top:2px solid #e5e7eb;font-weight:700"><td>Totaal</td><td style="text-align:right;color:#7c3aed">'+fmt(L1.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#2563eb">'+fmt(L2.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#d97706">'+fmt(L3.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right;color:#c2410c">'+fmt(L4.reduce((s,x)=>s+x,0))+'</td><td style="text-align:right">'+fmt(totPool)+'</td><td style="text-align:right">100%</td></tr></tbody></table>';
+  h+='<p class="note" style="margin-top:8px">L4 proxy = tarief × blokken/week. Bedienden uitgesloten.</p>';rdiv.innerHTML=h;
+}
+
+function renderMix(){
+  const ROPT='<option value="afdracht">→ afdracht</option><option value="cappuccino">→ ☕ pool</option><option value="instelbaar">⚙ p.p.</option>';
+  const FOPT='<option value="consultatie">💬 Consult</option><option value="technisch">🔬 Technisch</option><option value="mdo">👥 MDO</option><option value="groep">🫂 Groep</option><option value="toeslag">🌙 Toeslag</option><option value="admin">📝 Admin</option>';
+  document.getElementById('acts-tbody').innerHTML=acts.map(a=>{
+    const dur=a.familie==='consultatie'?'<input type="number" value="'+(a.duur||60)+'" style="width:50px" oninput="actD(\''+a.id+'\',+this.value)"> min':a.familie==='technisch'?'<input type="number" value="'+(a.duurDeclarant||8)+'" style="width:38px" oninput="actDD(\''+a.id+'\',+this.value)"> min + <input type="number" value="'+(a.duurPersoneel||15)+'" style="width:38px" oninput="actDP(\''+a.id+'\',+this.value)"> VPK':'—';
+    return'<tr><td><input type="text" value="'+a.naam+'" oninput="actN(\''+a.id+'\',this.value)" style="min-width:140px"></td><td><select onchange="actF(\''+a.id+'\',this.value)">'+FOPT.replace('value="'+a.familie+'"','value="'+a.familie+'" selected')+'</select></td><td><input type="number" value="'+a.tarief+'" style="width:60px" oninput="actT(\''+a.id+'\',+this.value)"></td><td style="font-size:11px">'+dur+'</td><td><select onchange="actR(\''+a.id+'\',this.value)">'+ROPT.replace('value="'+a.routing+'"','value="'+a.routing+'" selected')+'</select></td><td><button class="btn-del" onclick="delAct(\''+a.id+'\')">×</button></td></tr>';
+  }).join('');
+
+  const cActs=acts.filter(a=>a.familie==='consultatie'),tActs=acts.filter(a=>a.familie==='technisch'),mActs=acts.filter(a=>a.familie==='mdo'),adAct=acts.find(a=>a.familie==='admin'),avAct=acts.find(a=>a.familie==='toeslag');
+  const cOpts=cActs.map(a=>'<option value="'+a.id+'">'+a.naam+'</option>').join('');
+
+  document.getElementById('mix-personen').innerHTML=team.map((p,pi)=>{
+    const isBed=p.type==='bediende',dd=dagdelen(p),wk=wkPerMaand(p);
+    const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{},mdoMap=personMDO[p.id]||{},adminMap=personAdmin[p.id]||{},avMap=personAvond[p.id]||{};
+    const avDD=avondDelen(p),totPct=mix.reduce((s,m)=>s+(+m.pct||0),0),pctOk=mix.length===0||Math.abs(totPct-100)<0.5;
+    let body='';
+    if(!isBed){
+      // Consultatiemix
+      const mRows=mix.map((m,mi)=>{
+        const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie'),cpb=act?cpbForAct(act):0,blk=dd*(m.pct/100),vol=blk*cpb*wk;
+        return'<tr><td><select onchange="mixActId(\''+p.id+'\','+mi+',this.value)" style="font-size:11px;border:1px solid #e5e7eb;border-radius:4px;padding:2px 3px"><option value="">— kies —</option>'+cOpts.replace('value="'+m.actId+'"','value="'+m.actId+'" selected')+'</select></td>'
+          +'<td><input type="number" value="'+(m.pct||'')+'" placeholder="0" min="0" max="100" style="width:46px;border:1px solid #e5e7eb;border-radius:4px;padding:2px 4px;font-size:11px" oninput="mixPct(\''+p.id+'\','+mi+',+this.value)"> %</td>'
+          +'<td style="text-align:center"><span class="cpb-pill">'+(act?cpb+'/blok':'—')+'</span></td>'
+          +'<td style="text-align:right;font-size:11px;color:#6b7280">'+(act&&dd?Math.round(vol)+'/mnd':'')+'</td>'
+          +'<td><div style="width:'+Math.min(+m.pct||0,100)+'px;max-width:80px;height:5px;background:#4f46e5;border-radius:3px;min-width:2px"></div></td>'
+          +'<td><button class="btn-del" onclick="delMixRow(\''+p.id+'\','+mi+')">×</button></td></tr>';
+      }).join('');
+      body+='<div class="mix-section"><div class="card-title">Consultatiemix</div>'
+        +'<table style="font-size:11px"><thead><tr><th>Act</th><th>%</th><th style="text-align:center">Cons/blok</th><th style="text-align:right">Volume/mnd</th><th>Verdeling</th><th></th></tr></thead><tbody>'
+        +(mRows||'<tr><td colspan="6" style="color:#9ca3af;padding:5px 0;font-size:11px">Geen mix ingesteld — gebruikt standaard tarief/cons</td></tr>')
+        +'</tbody></table><div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+        +'<button class="btn btn-primary btn-sm" onclick="addMixRow(\''+p.id+'\')">+ Act toevoegen</button>'
+        +(mix.length>0?'<span class="'+(pctOk?'pct-ok':'pct-warn')+'">'+totPct+'% '+(pctOk?'✓':'← moet 100% zijn')+'</span>':'')
+        +'</div></div>';
+      // Technische prestaties
+      if(tActs.length){
+        const tRows=tActs.map(act=>{const cnt=tech[act.id]||0,inc=cnt*dd*wk*act.tarief*(p.pct/100);return'<tr><td>'+act.naam+' <span style="font-size:9px;color:#9ca3af">'+act.duurDeclarant+'min decl + '+act.duurPersoneel+'min VPK</span></td><td><input type="number" value="'+(cnt||'')+'" placeholder="0" min="0" style="width:46px;border:1px solid #e5e7eb;border-radius:4px;padding:2px 4px;font-size:11px" oninput="setTech(\''+p.id+'\',\''+act.id+'\',+this.value)"> /dagdeel</td><td style="text-align:right;color:#059669;font-size:11px">'+(cnt&&dd?fmt(inc):'—')+'</td></tr>';}).join('');
+        body+='<div class="mix-section"><div class="card-title">Technische prestaties (→ afdracht)</div><table style="font-size:11px"><thead><tr><th>Prestatie</th><th>Volume</th><th style="text-align:right">VZW/mnd</th></tr></thead><tbody>'+tRows+'</tbody></table></div>';
+      }
+      // MDO — eenvoudige invoer: aantal MDO's per week per teamlid
+      const mdoMDOs=+mdoBlokken[p.id]||0,mdoTar=mdoTariefAct(),mdoInc=mdoMDOs*mdoTar*wk;
+      let mdoBlockHtml='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11.5px;border-bottom:1px solid #f3f4f6;margin-bottom:6px">'
+        +'<span style="font-weight:600">🗣 MDO\'s/week</span>'
+        +'<input type="number" value="'+(mdoMDOs||'')+'" placeholder="0" min="0" max="40" style="width:50px;border:1px solid #e5e7eb;border-radius:5px;padding:3px 6px;text-align:center;font-weight:600" oninput="setMdoBlokken(\''+p.id+'\',+this.value)">'
+        +(mdoMDOs?'<span style="color:#6b7280;font-size:10.5px">× €'+mdoTar+' × '+wk.toFixed(2)+' wk/mnd</span><span style="color:#7c3aed;font-weight:600;margin-left:auto">→ '+fmt(mdoInc)+'/mnd</span><span class="capp-badge">→ ☕</span>':'<span style="color:#9ca3af;font-size:10.5px;margin-left:auto">aantal cliënt-besprekingen/week voor dit teamlid</span>')
+        +'</div>';
+      if(mActs.length){
+        const mRows2=mActs.map(act=>{const pw=mdoMap[act.id]||0,inc=pw*act.tarief*wk;return'<tr><td>'+act.naam+'</td><td><input type="number" value="'+(pw||'')+'" placeholder="0" min="0" style="width:46px;border:1px solid #e5e7eb;border-radius:4px;padding:2px 4px;font-size:11px" oninput="setMDO(\''+p.id+'\',\''+act.id+'\',+this.value)"> /week</td><td style="text-align:right;color:#7c3aed;font-size:11px">'+(pw?fmt(inc):'—')+'</td><td><span class="capp-badge">→ ☕</span></td></tr>';}).join('');
+        body+='<div class="mix-section"><div class="card-title">MDO (→ ☕ pool)</div>'+mdoBlockHtml+'<div style="font-size:10.5px;color:#9ca3af;margin:4px 0 3px">Of losse MDO-acts (oude manier, per act-type):</div><table style="font-size:11px"><thead><tr><th>Type</th><th>Frequentie</th><th style="text-align:right">Pool/mnd</th><th></th></tr></thead><tbody>'+mRows2+'</tbody></table></div>';
+      } else {
+        body+='<div class="mix-section"><div class="card-title">MDO (→ ☕ pool)</div>'+mdoBlockHtml+'</div>';
+      }
+      // Admin
+      if(adAct){const pm=adminMap[adAct.id]||0,inc=pm*adAct.tarief;body+='<div class="mix-section"><div class="card-title">Administratieve kost €'+adAct.tarief+' (→ ☕ pool)</div><div style="display:flex;align-items:center;gap:8px;font-size:11.5px"><input type="number" value="'+(pm||'')+'" placeholder="0" min="0" style="width:65px;border:1px solid #e5e7eb;border-radius:5px;padding:3px 6px" oninput="setAdmin(\''+p.id+'\',\''+adAct.id+'\',+this.value)"> handelingen/mnd'+(pm?'<span style="color:#7c3aed;font-weight:600">→ '+fmt(inc)+'/mnd</span>':'')+'<span class="capp-badge">→ ☕</span></div></div>';}
+      // Avond
+      if(avAct&&avDD>0){const routing=avMap[avAct.id]||'afdracht',inc=avDD*wk*avAct.tarief;body+='<div class="avond-row">🌙 <strong>'+avDD+' avondblok'+(avDD>1?'ken':'')+'/week</strong> → '+fmt(inc)+'/mnd <select onchange="setAvond(\''+p.id+'\',\''+avAct.id+'\',this.value)" style="margin-left:auto;padding:2px 6px;border:1px solid #e5e7eb;border-radius:5px;font-size:11px"><option value="afdracht"'+(routing==='afdracht'?' selected':'')+'>→ persoonlijk</option><option value="cappuccino"'+(routing==='cappuccino'?' selected':'')+'>→ ☕ pool</option></select></div>';}
+    }else{body='<p class="note">Bediende — geen consultatiemix of cappuccinodeelname.</p>';}
+    return'<div class="mix-person" style="border-left:3px solid '+clr(pi)+'"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="color-dot" style="background:'+clr(pi)+';width:10px;height:10px"></div><strong style="font-size:13px">'+p.naam+'</strong><span class="type-badge '+(isBed?'type-b':'type-z')+'" style="cursor:default">'+(isBed?'B':'Z')+'</span>'+(dd?'<span style="font-size:11px;color:#6b7280;margin-left:auto">'+dd+' blokken/wk</span>':'<span style="font-size:11px;color:#dc2626;margin-left:auto">⚠️ geen roosterblokken</span>')+'</div>'+body+'</div>';
+  }).join('');
+}
+
+function renderCap(){
+  const rows=team.map((p,pi)=>{
+    const dd=dagdelen(p),wk=wkPerMaand(p),mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{},mdoMap=personMDO[p.id]||{};
+    let cMnd=0;
+    if(mix.length>0){for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(act)cMnd+=dd*(m.pct/100)*cpbForAct(act)*wk;}}
+    else if(p.type!=='bediende'&&dd>0)cMnd=dd*p.cons*wk;
+    let tMnd=0;for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId);if(act&&cnt)tMnd+=cnt*dd*wk;}
+    let mMnd=0;for(const[,pw]of Object.entries(mdoMap)){if(pw)mMnd+=pw*wk;}
+    return{p,pi,dd,cMnd,tMnd,mMnd,hasMix:mix.length>0};
+  });
+  const tC=rows.reduce((s,r)=>s+r.cMnd,0),tT=rows.reduce((s,r)=>s+r.tMnd,0),tM=rows.reduce((s,r)=>s+r.mMnd,0);
+  const trajLen=+(document.getElementById('p-trajlen')?.value)||20,newPat=trajLen>0?tC/trajLen:0;
+  let h='<div class="cap-stat-grid"><div class="sum-card"><div class="sum-label">Consultaties/mnd</div><div class="sum-val neutral">'+Math.round(tC)+'</div></div><div class="sum-card"><div class="sum-label">Tech. prestaties/mnd</div><div class="sum-val neutral">'+Math.round(tT)+'</div></div><div class="sum-card"><div class="sum-label">MDOs/mnd</div><div class="sum-val neutral">'+Math.round(tM)+'</div></div><div class="sum-card"><div class="sum-label">Nieuwe patiënten/mnd</div><div class="sum-val green">'+Math.round(newPat)+'</div></div></div>';
+  h+='<div class="card"><div class="card-title">Capaciteit per teamlid</div><table><thead><tr><th>Naam</th><th style="text-align:right">Blokken/wk</th><th style="text-align:right">Consult/mnd</th><th style="text-align:right">Tech/mnd</th><th style="text-align:right">MDO/mnd</th><th style="text-align:right">Bron</th></tr></thead><tbody>';
+  rows.forEach(({p,pi,dd,cMnd,tMnd,mMnd,hasMix})=>{h+='<tr><td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+clr(pi)+';margin-right:5px"></span>'+p.naam+'</td><td style="text-align:right">'+dd+'</td><td style="text-align:right;font-weight:600">'+(Math.round(cMnd)||'—')+'</td><td style="text-align:right">'+(Math.round(tMnd)||'—')+'</td><td style="text-align:right">'+(Math.round(mMnd)||'—')+'</td><td style="text-align:right"><span style="font-size:10px;padding:1px 5px;border-radius:3px;background:'+(hasMix?'#ede9fe':'#f3f4f6')+';color:'+(hasMix?'#6d28d9':'#9ca3af')+'">'+(hasMix?'mix':'standaard')+'</span></td></tr>';});
+  h+='<tr style="border-top:2px solid #e5e7eb;font-weight:700"><td>Totaal</td><td style="text-align:right">'+rows.reduce((s,r)=>s+r.dd,0)+'</td><td style="text-align:right">'+Math.round(tC)+'</td><td style="text-align:right">'+Math.round(tT)+'</td><td style="text-align:right">'+Math.round(tM)+'</td><td></td></tr></tbody></table><p class="note" style="margin-top:7px">Trajectlengte: '+trajLen+' gesprekken (Overleg-tab). Nieuwe patiënten/mnd = consultaties ÷ trajectlengte.</p></div>';
+  document.getElementById('cap-content').innerHTML=h;
+}
+
+function hv_naam(id,v){const p=team.find(x=>x.id===id);if(p){p.naam=v;refreshAll();onAnyChange();}}
+function hv_v(id,f,v){const p=team.find(x=>x.id===id);if(p){p[f]=v;renderFin();renderCapp();onAnyChange();}}
+function setPctSlider(pid,v){
+  const p=team.find(x=>x.id===pid);
+  if(!p)return;
+  p.pct=v;
+  const teamInput=document.querySelector('input[data-team-pct="'+pid+'"]');
+  if(teamInput)teamInput.value=v;
+  renderFin();renderCapp();
+  if(document.getElementById('tab-mix').classList.contains('active'))renderMix();
+  onAnyChange();
+}
+function toggleCappOptIn(pid){
+  const p=team.find(x=>x.id===pid);
+  if(!p||p.type==='bediende')return;
+  cappOptIn[pid]=cappOptIn[pid]===false?true:false;
+  renderFin();renderCapp();onAnyChange();
+}
+function setEurBlokSlider(pid,eur){
+  const p=team.find(x=>x.id===pid);
+  if(!p)return;
+  const bruto=brutoEurPerBlok(p);
+  if(bruto<=0){return;}
+  let newPct=(eur/bruto)*100;
+  newPct=Math.max(0,Math.min(100,newPct));
+  p.pct=Math.round(newPct*10)/10;
+  const teamInput=document.querySelector('input[data-team-pct="'+pid+'"]');
+  if(teamInput)teamInput.value=p.pct;
+  renderFin();renderCapp();
+  if(document.getElementById('tab-mix').classList.contains('active'))renderMix();
+  onAnyChange();
+}
+function updateFinLabels(pid,val,type){
+  // Live sync tussen %-slider en €/blok-slider tijdens slepen (geen volledige re-render)
+  const p=team.find(x=>x.id===pid);
+  if(!p)return;
+  const bruto=brutoEurPerBlok(p),dd=dagdelen(p);
+  let pct,eur;
+  if(type==='pct'){pct=+val;eur=(pct/100)*bruto;}
+  else{eur=+val;pct=bruto>0?(eur/bruto)*100:0;}
+  const elP=document.getElementById('fin-pct-lbl-'+pid);if(elP)elP.textContent=pct.toFixed(1)+'%';
+  const elE=document.getElementById('fin-eur-lbl-'+pid);if(elE)elE.textContent='€'+Math.round(eur)+'/blok';
+  const elW=document.getElementById('fin-week-lbl-'+pid);if(elW)elW.textContent=dd?'= €'+Math.round(eur*dd)+'/wk':'—';
+  // Synchroniseer de andere slider visueel
+  if(type==='pct'){const slE=document.querySelector('input[data-fin-eur="'+pid+'"]');if(slE)slE.value=eur.toFixed(1);}
+  else{const slP=document.querySelector('input[data-fin-pct="'+pid+'"]');if(slP)slP.value=pct.toFixed(1);}
+}
+function toggleType(id){const p=team.find(x=>x.id===id);if(p){p.type=p.type==='bediende'?'zelfstandige':'bediende';renderTeam();renderCapp();renderMix();onAnyChange();}}
+function kn(id,v){const k=kostenData.find(x=>x.id===id);if(k){k.naam=v;onAnyChange();}}
+function kb(id,v){const k=kostenData.find(x=>x.id===id);if(k){k.bedrag=v;renderKosten();renderFin();renderCapp();onAnyChange();}}
+function kp(id){const k=kostenData.find(x=>x.id===id);if(k){k.periode=k.periode==='jr'?'mnd':'jr';renderKosten();renderFin();renderCapp();onAnyChange();}}
+function delKost(id){kostenData=kostenData.filter(x=>x.id!==id);renderKosten();renderFin();renderCapp();onAnyChange();}
+function addKost(){const n=document.getElementById('nk-naam').value.trim(),b=+document.getElementById('nk-bedrag').value||0,per=document.getElementById('nk-periode').value||'mnd';if(!n)return;kostenData.push({id:nextId('k'),naam:n,bedrag:b,periode:per});document.getElementById('nk-naam').value='';document.getElementById('nk-bedrag').value='';renderKosten();renderFin();renderCapp();onAnyChange();}
+const MANDAAT_TOT_PTN=30;
+function normalizeMandaten(){
+  if(!mandaten.length)return;
+  const sum=mandaten.reduce((s,m)=>s+(+m.punten||0),0);
+  if(sum>0.01){const f=MANDAAT_TOT_PTN/sum;mandaten.forEach(m=>m.punten=m.punten*f);}
+  else{const each=MANDAAT_TOT_PTN/mandaten.length;mandaten.forEach(m=>m.punten=each);}
+}
+function setMandaatPuntenLocked(id,newVal){
+  const target=mandaten.find(m=>m.id===id);
+  if(!target)return;
+  newVal=Math.max(0,Math.min(MANDAAT_TOT_PTN,newVal));
+  target.punten=newVal;
+  const others=mandaten.filter(m=>m.id!==id);
+  const sumOthers=others.reduce((s,m)=>s+m.punten,0);
+  const targetOthers=MANDAAT_TOT_PTN-newVal;
+  if(sumOthers>0.001){const f=targetOthers/sumOthers;others.forEach(m=>m.punten=Math.max(0,m.punten*f));}
+  else if(targetOthers>0&&others.length){const each=targetOthers/others.length;others.forEach(m=>m.punten=each);}
+  renderCapp();onAnyChange();
+}
+function mn(id,v){const m=mandaten.find(x=>x.id===id);if(m){m.naam=v;onAnyChange();}}
+function mpx(id,v){const m=mandaten.find(x=>x.id===id);if(m){m.punten=v;renderCapp();onAnyChange();}}
+function delMandaat(id){mandaten=mandaten.filter(x=>x.id!==id);Object.keys(personMandaten).forEach(pid=>{personMandaten[pid]=(personMandaten[pid]||[]).filter(mid=>mid!==id);});normalizeMandaten();renderCapp();onAnyChange();}
+function addMandaat(){const n=document.getElementById('nm-naam').value.trim();if(!n)return;mandaten.push({id:nextId('md'),naam:n,punten:0});document.getElementById('nm-naam').value='';const np=document.getElementById('nm-punten');if(np)np.value='';renderCapp();onAnyChange();}
+function toggleMandaat(pid,mid){if(!personMandaten[pid])personMandaten[pid]=[];const idx=personMandaten[pid].indexOf(mid);if(idx>=0)personMandaten[pid].splice(idx,1);else personMandaten[pid].push(mid);renderCapp();onAnyChange();}
+function setWC(pid,v){werkelijkeCons[pid]=v;renderCapp();onAnyChange();}
+function setRatioSlider(pid,ratio){
+  const p=team.find(x=>x.id===pid);
+  if(!p)return;
+  const vw=dagdelen(p)*p.cons*wkPerMaand(p);
+  werkelijkeCons[pid]=Math.round(vw*ratio);
+  renderCapp();
+  renderFin();
+  onAnyChange();
+}
+function onCappChange(){renderCapp();onAnyChange();}
+function toggleSlot(pid,di,bi){if(!slots[pid])slots[pid]=mkDef();slots[pid][di][bi]=!slots[pid][di][bi];renderRooster();renderFin();renderCapp();renderMix();renderCap();onAnyChange();}
+function addPersoon(){const n=document.getElementById('nh-naam').value.trim();if(!n)return;const id=nextId('tp'),t=document.getElementById('nh-type').value||'zelfstandige';const pctStr=document.getElementById('nh-pct').value;const pct=pctStr===''||pctStr==null?20:+pctStr;team.push({id,naam:n,type:t,tarief:+document.getElementById('nh-tarief').value||80,cons:+document.getElementById('nh-cons').value||4,pct:pct,wkjr:+document.getElementById('nh-wkjr').value||46});slots[id]=mkDef();['nh-naam','nh-tarief','nh-cons','nh-pct','nh-wkjr'].forEach(x=>document.getElementById(x).value='');refreshAll();onAnyChange();}
+function delPersoon(id){team=team.filter(p=>p.id!==id);delete slots[id];delete personMandaten[id];delete werkelijkeCons[id];delete personMix[id];delete personTechnisch[id];delete personMDO[id];delete personAdmin[id];delete personAvond[id];delete mdoBlokken[id];delete cappOptIn[id];refreshAll();onAnyChange();}
+function onOverleg(){renderOverleg();renderFin();renderRooster();renderCap();onAnyChange();}
+function actN(id,v){const a=acts.find(x=>x.id===id);if(a){a.naam=v;onAnyChange();}}
+function actF(id,v){const a=acts.find(x=>x.id===id);if(a){a.familie=v;renderMix();onAnyChange();}}
+function actT(id,v){const a=acts.find(x=>x.id===id);if(a){a.tarief=v;renderFin();renderCapp();renderMix();renderCap();renderTeam();onAnyChange();}}
+function actD(id,v){const a=acts.find(x=>x.id===id);if(a){a.duur=v;renderMix();renderCap();renderTeam();renderFin();onAnyChange();}}
+function actDD(id,v){const a=acts.find(x=>x.id===id);if(a){a.duurDeclarant=v;renderMix();onAnyChange();}}
+function actDP(id,v){const a=acts.find(x=>x.id===id);if(a){a.duurPersoneel=v;renderMix();onAnyChange();}}
+function actR(id,v){const a=acts.find(x=>x.id===id);if(a){a.routing=v;renderMix();onAnyChange();}}
+function delAct(id){acts=acts.filter(x=>x.id!==id);Object.keys(personMix).forEach(pid=>{personMix[pid]=(personMix[pid]||[]).filter(m=>m.actId!==id);});['personTechnisch','personMDO','personAdmin','personAvond'].forEach(k=>{Object.keys(window[k]).forEach(pid=>{delete window[k][pid][id];});});renderMix();renderFin();renderCapp();renderCap();renderTeam();onAnyChange();}
+function addAct(){const n=document.getElementById('na-naam').value.trim(),f=document.getElementById('na-familie').value,t=+document.getElementById('na-tarief').value||0,d=+document.getElementById('na-duur').value||60;if(!n)return;acts.push({id:nextId('ac'),naam:n,familie:f,tarief:t,duur:d,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'});document.getElementById('na-naam').value='';document.getElementById('na-tarief').value='';document.getElementById('na-duur').value='';renderMix();onAnyChange();}
+function addMixRow(pid){if(!personMix[pid])personMix[pid]=[];const fc=acts.find(a=>a.familie==='consultatie');personMix[pid].push({actId:fc?fc.id:'',pct:0});renderMix();renderTeam();onAnyChange();}
+function delMixRow(pid,idx){if(!personMix[pid])return;personMix[pid].splice(idx,1);if(personMix[pid].length===0)delete personMix[pid];renderMix();renderFin();renderCap();renderTeam();onAnyChange();}
+function mixActId(pid,idx,v){if(!personMix[pid])return;personMix[pid][idx].actId=v;renderMix();renderFin();renderCap();renderTeam();onAnyChange();}
+function mixPct(pid,idx,v){if(!personMix[pid])return;personMix[pid][idx].pct=v;renderMix();renderFin();renderCap();renderTeam();onAnyChange();}
+function setTech(pid,actId,v){if(!personTechnisch[pid])personTechnisch[pid]={};personTechnisch[pid][actId]=v;renderMix();renderFin();renderCap();onAnyChange();}
+function setMDO(pid,actId,v){if(!personMDO[pid])personMDO[pid]={};personMDO[pid][actId]=v;renderCapp();renderMix();onAnyChange();}
+function setAdmin(pid,actId,v){if(!personAdmin[pid])personAdmin[pid]={};personAdmin[pid][actId]=v;renderCapp();renderMix();onAnyChange();}
+function setAvond(pid,actId,v){if(!personAvond[pid])personAvond[pid]={};personAvond[pid][actId]=v;renderCapp();renderMix();onAnyChange();}
+function setMdoConfig(field,v){mdoConfig[field]=v;renderRooster();renderCapp();renderFin();renderMix();onAnyChange();}
+function setMdoBlokken(pid,v){mdoBlokken[pid]=v;renderRooster();renderCapp();renderFin();renderMix();onAnyChange();}
+function addMdoBooking(day,startHour){
+  const dur=+mdoConfig.blokUren||2;
+  const end=startHour+dur;
+  if(end>22.0){alert('MDO-blok loopt na 22u — kies vroegere starttijd.');return;}
+  if(!mdoBureauVrij(day,startHour,end)){alert('Geen vrij bureau in dit tijdsblok — alle bureaus zijn bezet door consultaties.');return;}
+  if(mdoBookingOverlap(day,startHour,end,null)){alert('Overlapt met bestaande MDO-booking.');return;}
+  mdoBookings.push({id:nextId('mdb'),day,startHour,durationHours:dur});
+  renderRooster();renderCapp();renderFin();onAnyChange();
+}
+function delMdoBooking(id){mdoBookings=mdoBookings.filter(b=>b.id!==id);renderRooster();renderCapp();renderFin();onAnyChange();}
+
+function refreshFin(){const a=id=>document.getElementById('tab-'+id).classList.contains('active');if(a('fin'))renderFin();if(a('kosten'))renderKosten();}
+function refreshAll(){renderTeam();renderRooster();renderFin();renderKosten();const a=id=>document.getElementById('tab-'+id).classList.contains('active');if(a('overleg'))renderOverleg();if(a('capp'))renderCapp();if(a('mix'))renderMix();if(a('cap'))renderCap();}
+function showTab(id,btn){document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');if(id==='fin')renderFin();else if(id==='rooster')renderRooster();else if(id==='team')renderTeam();else if(id==='kosten')renderKosten();else if(id==='overleg')renderOverleg();else if(id==='capp')renderCapp();else if(id==='mix')renderMix();else if(id==='cap')renderCap();}
+
+document.getElementById('save-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+(function(){
+  const loaded=lsLoad();
+  if(!loaded)normalizeMandaten();
+  refreshAll();
+  const el=document.getElementById('save-status');
+  if(el){if(loaded){el.textContent='✓ Vorige sessie geladen';el.className='save-status saved';}else{el.textContent='Standaardinstellingen';el.className='save-status';}}
+})();
+</script>
+</body>
+</html>
