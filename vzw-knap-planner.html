@@ -143,6 +143,11 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
 .be-pill{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;}
 .be-pill.ok{background:#dcfce7;color:#15803d;}
 .be-pill.bad{background:#fee2e2;color:#b91c1c;}
+.fin-expand-btn{font-size:10px;padding:1px 6px;border-radius:4px;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#4f46e5;font-weight:600;margin-left:6px;}
+.fin-expand-btn:hover{background:#f3f4f6;}
+.fin-expand-btn.on{background:#ede9fe;border-color:#c4b5fd;}
+.fin-sub-row td{background:#fafafa;padding:4px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;}
+.fin-act-pill{font-size:9px;background:#ede9fe;color:#6d28d9;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:5px;}
 </style>
 </head>
 <body>
@@ -344,9 +349,10 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
 <div id="tab-mix" class="tab-pane">
   <div class="card">
     <div class="card-title">📋 Actencatalogus — billable acts</div>
-    <table><thead><tr><th>Naam</th><th style="width:100px">Familie</th><th style="width:70px">Tarief €</th><th style="width:145px">Duur (min)</th><th style="width:110px">Routing</th><th style="width:28px"></th></tr></thead><tbody id="acts-tbody"></tbody></table>
+    <table><thead><tr><th>Naam</th><th style="width:115px">Nomenclatuur<br><span style="font-weight:400;color:#9ca3af;font-size:9px">RIZIV-code</span></th><th style="width:100px">Familie</th><th style="width:70px">Tarief €</th><th style="width:145px">Duur (min)</th><th style="width:110px">Routing</th><th style="width:28px"></th></tr></thead><tbody id="acts-tbody"></tbody></table>
     <div class="add-row">
       <div><label>Naam</label><input type="text" id="na-naam" placeholder="Nieuwe act" style="width:150px"></div>
+      <div><label>Nomenclatuur</label><input type="text" id="na-nomencl" placeholder="optioneel" style="width:110px;font-family:monospace"></div>
       <div><label>Familie</label><select id="na-familie"><option value="consultatie">💬 Consult</option><option value="technisch">🔬 Technisch</option><option value="mdo">👥 MDO</option><option value="groep">🫂 Groep</option><option value="toeslag">🌙 Toeslag</option><option value="admin">📝 Admin</option></select></div>
       <div><label>Tarief (€)</label><input type="number" id="na-tarief" placeholder="50" style="width:68px"></div>
       <div><label>Duur (min)</label><input type="number" id="na-duur" placeholder="60" style="width:65px"></div>
@@ -445,6 +451,8 @@ let mdoBookings=[]; // [{id, day:0-4, startHour:float (uren sinds middernacht), 
 let mdoBlokken={}; // {pid: aantalMDOsPerWeek} — aantal MDO-sessies/cliëntbesprekingen per week per teamlid
 let cappOptIn={}; // {pid: true/false} — deelname aan cappuccinopool. Default true voor zelfstandigen.
 let overlegOhActief=true; // wanneer uit: overhead wordt op 0 gezet in alle berekeningen (Fin, Mix, Capp, ...).
+let personActPct={}; // {pid:{actId:pct}} — per persoon override-afdracht% per specifieke act
+let finExpanded={}; // {pid:true} — UI-state: welke teamleden hebben hun sub-rijen open
 let acts=DEFAULT_ACTS.map(a=>({...a}));
 let personMix={};        // {pid:[{actId,pct}]}
 let personTechnisch={};  // {pid:{actId:count}}
@@ -506,7 +514,7 @@ function copyJSON(){const ta=document.getElementById('modal-json');ta.select();t
 
 function getOverlegFromDOM(){const g=id=>+(document.getElementById(id)?.value)||0;return{opstart:g('p-opstart')||15,ntraject:g('p-ntraject')||2,mintraject:g('p-mintraject')||15,mdofreq:g('p-mdofreq')||5,mdomin:g('p-mdomin')||15,trajlen:g('p-trajlen')||20,consdur:g('p-consdur')||60};}
 function getCappFromDOM(){return{pctL1:+(document.getElementById('capp-pct-l1')?.value)||30,pctL2:+(document.getElementById('capp-pct-l2')?.value)||30,pctL3:+(document.getElementById('capp-pct-l3')?.value)||20,pctL4cap:+(document.getElementById('capp-pct-l4cap')?.value)||20,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
-function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief};}
+function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief,personActPct:JSON.parse(JSON.stringify(personActPct))};}
 function applyState(st){
   team=(st.team||DEFAULT_TEAM.map(p=>({...p}))).map(p=>({type:'zelfstandige',...p}));
   slots=st.slots||{};team.forEach(p=>{if(!slots[p.id])slots[p.id]=mkDef();});
@@ -529,7 +537,7 @@ function applyState(st){
   mandaten=st.mandaten||DEFAULT_MANDATEN.map(m=>({...m}));normalizeMandaten();
   personMandaten=st.personMandaten||{};werkelijkeCons=st.werkelijkeCons||{};
   cappData={...DEFAULT_CAPP,...(st.cappData||{})};
-  acts=(st.acts||DEFAULT_ACTS.map(a=>({...a}))).map(a=>({routing:'afdracht',...a}));
+  acts=(st.acts||DEFAULT_ACTS.map(a=>({...a}))).map(a=>({routing:'afdracht',nomencl:'',...a}));
   personMix=st.personMix||{};personTechnisch=st.personTechnisch||{};
   personMDO=st.personMDO||{};personAdmin=st.personAdmin||{};personAvond=st.personAvond||{};
   mdoConfig={...DEFAULT_MDO_CONFIG,...(st.mdoConfig||{})};
@@ -537,6 +545,7 @@ function applyState(st){
   mdoBlokken=st.mdoBlokken||{};
   cappOptIn=st.cappOptIn||{};
   overlegOhActief=st.overlegOhActief!==undefined?!!st.overlegOhActief:true;
+  personActPct=st.personActPct||{};
   const ov={...DEFAULT_OVERLEG,...(st.overleg||{})};
   Object.entries(ov).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});
   if(st.bureauLimit){const bl=document.getElementById('bureau-limit');if(bl)bl.value=st.bureauLimit;}
@@ -550,7 +559,7 @@ function setStatus(t,c){const el=document.getElementById('save-status');if(el){e
 function onAnyChange(){lsAutoSave();setStatus('✓ Opgeslagen','saved');}
 function exportJSON(){document.getElementById('modal-json').value=JSON.stringify(buildState(),null,2);openModal();}
 function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{applyState(JSON.parse(e.target.result));refreshAll();lsAutoSave();setStatus('✓ Geladen','saved');}catch(err){alert('Fout: '+err.message);}};r.readAsText(f);inp.value='';}
-function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
+function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));personMandaten={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;personActPct={};finExpanded={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
 
 function clr(i){return COLORS[i%COLORS.length];}
 function fmt(n){return'€\u202F'+Math.round(n).toLocaleString('nl-BE');}
@@ -588,20 +597,31 @@ function mixGewogenCons(p){
   return totPct>0?totCons/totPct:null;
 }
 
+function getActPct(p,actId){const o=personActPct[p.id];if(o&&o[actId]!==undefined&&o[actId]!==null&&o[actId]!=='')return +o[actId];return +p.pct||0;}
+function hasActOverride(p,actId){const o=personActPct[p.id];return!!(o&&o[actId]!==undefined&&o[actId]!==null&&o[actId]!=='');}
+function getActsForPersonAfdracht(p){
+  // Lijst van acts (met routing 'afdracht') waar deze persoon iets mee doet
+  const list=[];
+  const mix=personMix[p.id]||[];
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;if((act.routing||'afdracht')!=='afdracht')continue;list.push({act,source:'mix',mix:m});}
+  const tech=personTechnisch[p.id]||{};
+  for(const aId in tech){const cnt=+tech[aId]||0;if(cnt<=0)continue;const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act)continue;if((act.routing||'afdracht')!=='afdracht')continue;list.push({act,source:'tech',count:cnt});}
+  return list;
+}
 function vzwPerMaandMixed(p){
   const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
-  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct(),afd=p.pct/100;
+  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct();
   let tot=0;
-  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*afd*wk;}
-  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;tot+=cnt*dd*wk*act.tarief*afd;}
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const afd=getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*afd*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;const afd=getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*afd;}
   return tot;
 }
 function persNettoMixed(p){
   const mix=personMix[p.id]||[],tech=personTechnisch[p.id]||{};
-  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct(),pers=1-p.pct/100;
+  const dd=dagdelen(p),wk=wkPerMaand(p),oh=ohPct();
   let tot=0;
-  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*pers*wk;}
-  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;tot+=cnt*dd*wk*act.tarief*pers;}
+  for(const m of mix){const act=acts.find(a=>a.id===m.actId&&a.familie==='consultatie');if(!act)continue;const pers=1-getActPct(p,act.id)/100;tot+=dd*(m.pct/100)*cpbForAct(act)*act.tarief*(1-oh)*pers*wk;}
+  for(const[aId,cnt]of Object.entries(tech)){const act=acts.find(a=>a.id===aId&&a.familie==='technisch');if(!act||!cnt)continue;const pers=1-getActPct(p,aId)/100;tot+=cnt*dd*wk*act.tarief*pers;}
   return tot;
 }
 function vzwActual(p){return(personMix[p.id]||[]).length>0?vzwPerMaandMixed(p):vzwPerMaand(p);}
@@ -756,7 +776,51 @@ function renderFin(){
     const capp=isBed?'<span style="color:#d1d5db">—</span>':'<div style="display:flex;align-items:center;justify-content:flex-end;gap:5px">'+toggle+cappBedrag+'</div>';
     const totaalIncl=optIn?totaalM:persM;
     const totaal=isBed?'<span style="color:#d1d5db">—</span>':(dd?'<span class="netto-pill">'+fmt(totaalIncl)+'</span>':'—');
-    return'<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+clr(pi)+';margin-right:5px;vertical-align:middle"></span>'+p.naam+'</td><td>'+prof+'</td><td style="text-align:right;font-weight:600;color:'+(dd?'#4f46e5':'#d1d5db')+'">'+dd+'</td><td style="text-align:right;font-weight:600">'+(dd?fmt(vzwM):'—')+'</td><td style="text-align:right;font-size:11px">'+pers+'</td><td style="text-align:right;font-size:11px">'+capp+'</td><td style="text-align:right;font-weight:600">'+totaal+'</td></tr>';
+    const afdActs=isBed?[]:getActsForPersonAfdracht(p);
+    const isExp=!!finExpanded[p.id];
+    const overrideCount=afdActs.filter(x=>hasActOverride(p,x.act.id)).length;
+    const expandBtn=afdActs.length>0
+      ?'<button class="fin-expand-btn'+(isExp?' on':'')+'" onclick="toggleFinExpand(\''+p.id+'\')" title="'+(isExp?'Sluit':'Toon')+' overrides per act">'+(isExp?'▾':'▸')+' '+afdActs.length+' act'+(afdActs.length===1?'':'s')+(overrideCount?' <span style="color:#7c3aed">('+overrideCount+' over)</span>':'')+'</button>'
+      :'';
+    const mainRow='<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+clr(pi)+';margin-right:5px;vertical-align:middle"></span>'+p.naam+expandBtn+'</td><td>'+prof+'</td><td style="text-align:right;font-weight:600;color:'+(dd?'#4f46e5':'#d1d5db')+'">'+dd+'</td><td style="text-align:right;font-weight:600">'+(dd?fmt(vzwM):'—')+'</td><td style="text-align:right;font-size:11px">'+pers+'</td><td style="text-align:right;font-size:11px">'+capp+'</td><td style="text-align:right;font-weight:600">'+totaal+'</td></tr>';
+    let subRows='';
+    if(isExp&&afdActs.length>0){
+      const oh=ohPct();
+      subRows=afdActs.map(({act,source,mix,count})=>{
+        const actPct=getActPct(p,act.id),isOv=hasActOverride(p,act.id);
+        const cpb=cpbForAct(act);
+        let brutoPerBlok;
+        if(source==='mix'){brutoPerBlok=(+mix.pct/100)*cpb*act.tarief*(1-oh);}
+        else{brutoPerBlok=(+count||0)*act.tarief;}
+        const afdPerBlok=brutoPerBlok*(actPct/100);
+        const monthly=source==='mix'
+          ?dd*(+mix.pct/100)*cpb*act.tarief*(1-oh)*(actPct/100)*wkPerMaand(p)
+          :(+count||0)*dd*wkPerMaand(p)*act.tarief*(actPct/100);
+        const accent=isOv?'#7c3aed':'#4f46e5';
+        return '<tr class="fin-sub-row">'
+          +'<td colspan="2" style="padding-left:25px;color:#374151">'
+            +'<span style="font-size:11px">└─ '+act.naam+'</span>'
+            +'<span style="font-size:9.5px;color:#9ca3af;margin-left:6px">'+(source==='mix'?'consult • '+(+mix.pct||0)+'% mix':'technisch • '+count+'/dagdeel')+'</span>'
+            +(isOv?'<span class="fin-act-pill">override</span>':'')
+          +'</td>'
+          +'<td colspan="2" style="padding:3px 8px">'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<input type="range" min="0" max="100" step="0.5" value="'+actPct+'" '
+              +'oninput="document.getElementById(\'fin-act-lbl-'+p.id+'-'+act.id+'\').textContent=(+this.value).toFixed(1)+\'%\'" '
+              +'onchange="setActPctOverride(\''+p.id+'\',\''+act.id+'\',+this.value)" '
+              +'style="flex:1;cursor:pointer;accent-color:'+accent+'">'
+              +'<span id="fin-act-lbl-'+p.id+'-'+act.id+'" style="font-weight:700;color:'+accent+';min-width:42px;text-align:right;font-size:11px">'+actPct.toFixed(1)+'%</span>'
+            +'</div>'
+          +'</td>'
+          +'<td style="text-align:right;font-size:10.5px;color:#6b7280">€'+Math.round(afdPerBlok)+'/blok</td>'
+          +'<td style="text-align:right;font-size:10.5px;color:#7c3aed;font-weight:600">'+fmt(monthly)+'/mnd</td>'
+          +'<td style="text-align:right">'
+            +(isOv?'<button class="btn-sv" style="padding:2px 7px;font-size:10px" onclick="clearActPctOverride(\''+p.id+'\',\''+act.id+'\')" title="Override verwijderen, terug naar algemeen %">↺</button>':'<span style="font-size:9.5px;color:#9ca3af">algemeen</span>')
+          +'</td>'
+        +'</tr>';
+      }).join('');
+    }
+    return mainRow+subRows;
   }).join('');
   const bars=team.map(p=>vzwActual(p));let cum=0;const cumL=bars.map(v=>{cum+=v;return cum;});
   if(finChart)finChart.destroy();
@@ -1039,7 +1103,7 @@ function renderMix(){
   const FOPT='<option value="consultatie">💬 Consult</option><option value="technisch">🔬 Technisch</option><option value="mdo">👥 MDO</option><option value="groep">🫂 Groep</option><option value="toeslag">🌙 Toeslag</option><option value="admin">📝 Admin</option>';
   document.getElementById('acts-tbody').innerHTML=acts.map(a=>{
     const dur=a.familie==='consultatie'?'<input type="number" value="'+(a.duur||60)+'" style="width:50px" oninput="actD(\''+a.id+'\',+this.value)"> min':a.familie==='technisch'?'<input type="number" value="'+(a.duurDeclarant||8)+'" style="width:38px" oninput="actDD(\''+a.id+'\',+this.value)"> min + <input type="number" value="'+(a.duurPersoneel||15)+'" style="width:38px" oninput="actDP(\''+a.id+'\',+this.value)"> VPK':'—';
-    return'<tr><td><input type="text" value="'+a.naam+'" oninput="actN(\''+a.id+'\',this.value)" style="min-width:140px"></td><td><select onchange="actF(\''+a.id+'\',this.value)">'+FOPT.replace('value="'+a.familie+'"','value="'+a.familie+'" selected')+'</select></td><td><input type="number" value="'+a.tarief+'" style="width:60px" oninput="actT(\''+a.id+'\',+this.value)"></td><td style="font-size:11px">'+dur+'</td><td><select onchange="actR(\''+a.id+'\',this.value)">'+ROPT.replace('value="'+a.routing+'"','value="'+a.routing+'" selected')+'</select></td><td><button class="btn-del" onclick="delAct(\''+a.id+'\')">×</button></td></tr>';
+    return'<tr><td><input type="text" value="'+a.naam+'" oninput="actN(\''+a.id+'\',this.value)" style="min-width:140px"></td><td><input type="text" value="'+(a.nomencl||'').replace(/"/g,'&quot;')+'" placeholder="—" oninput="actNom(\''+a.id+'\',this.value)" style="width:105px;font-family:monospace;font-size:11px;color:#374151"></td><td><select onchange="actF(\''+a.id+'\',this.value)">'+FOPT.replace('value="'+a.familie+'"','value="'+a.familie+'" selected')+'</select></td><td><input type="number" value="'+a.tarief+'" style="width:60px" oninput="actT(\''+a.id+'\',+this.value)"></td><td style="font-size:11px">'+dur+'</td><td><select onchange="actR(\''+a.id+'\',this.value)">'+ROPT.replace('value="'+a.routing+'"','value="'+a.routing+'" selected')+'</select></td><td><button class="btn-del" onclick="delAct(\''+a.id+'\')">×</button></td></tr>';
   }).join('');
 
   const cActs=acts.filter(a=>a.familie==='consultatie'),tActs=acts.filter(a=>a.familie==='technisch'),mActs=acts.filter(a=>a.familie==='mdo'),adAct=acts.find(a=>a.familie==='admin'),avAct=acts.find(a=>a.familie==='toeslag');
@@ -1126,6 +1190,9 @@ function setPctSlider(pid,v){
   if(document.getElementById('tab-mix').classList.contains('active'))renderMix();
   onAnyChange();
 }
+function toggleFinExpand(pid){finExpanded[pid]=!finExpanded[pid];renderFin();}
+function setActPctOverride(pid,actId,pct){if(!personActPct[pid])personActPct[pid]={};personActPct[pid][actId]=Math.max(0,Math.min(100,+pct||0));renderFin();renderCapp();onAnyChange();}
+function clearActPctOverride(pid,actId){if(personActPct[pid]){delete personActPct[pid][actId];if(Object.keys(personActPct[pid]).length===0)delete personActPct[pid];}renderFin();renderCapp();onAnyChange();}
 function toggleCappOptIn(pid){
   const p=team.find(x=>x.id===pid);
   if(!p||p.type==='bediende')return;
@@ -1204,7 +1271,7 @@ function setRatioSlider(pid,ratio){
 function onCappChange(){renderCapp();onAnyChange();}
 function toggleSlot(pid,di,bi){if(!slots[pid])slots[pid]=mkDef();slots[pid][di][bi]=!slots[pid][di][bi];renderRooster();renderFin();renderCapp();renderMix();renderCap();onAnyChange();}
 function addPersoon(){const n=document.getElementById('nh-naam').value.trim();if(!n)return;const id=nextId('tp'),t=document.getElementById('nh-type').value||'zelfstandige';const pctStr=document.getElementById('nh-pct').value;const pct=pctStr===''||pctStr==null?20:+pctStr;team.push({id,naam:n,type:t,tarief:+document.getElementById('nh-tarief').value||80,cons:+document.getElementById('nh-cons').value||4,pct:pct,wkjr:+document.getElementById('nh-wkjr').value||46});slots[id]=mkDef();['nh-naam','nh-tarief','nh-cons','nh-pct','nh-wkjr'].forEach(x=>document.getElementById(x).value='');refreshAll();onAnyChange();}
-function delPersoon(id){team=team.filter(p=>p.id!==id);delete slots[id];delete personMandaten[id];delete werkelijkeCons[id];delete personMix[id];delete personTechnisch[id];delete personMDO[id];delete personAdmin[id];delete personAvond[id];delete mdoBlokken[id];delete cappOptIn[id];refreshAll();onAnyChange();}
+function delPersoon(id){team=team.filter(p=>p.id!==id);delete slots[id];delete personMandaten[id];delete werkelijkeCons[id];delete personMix[id];delete personTechnisch[id];delete personMDO[id];delete personAdmin[id];delete personAvond[id];delete mdoBlokken[id];delete cappOptIn[id];delete personActPct[id];delete finExpanded[id];refreshAll();onAnyChange();}
 function onOverleg(){renderOverleg();renderFin();renderRooster();renderCap();renderCapp();if(document.getElementById('tab-mix').classList.contains('active'))renderMix();onAnyChange();}
 function toggleOverlegOh(active){
   overlegOhActief=!!active;
@@ -1213,14 +1280,15 @@ function toggleOverlegOh(active){
   onAnyChange();
 }
 function actN(id,v){const a=acts.find(x=>x.id===id);if(a){a.naam=v;onAnyChange();}}
+function actNom(id,v){const a=acts.find(x=>x.id===id);if(a){a.nomencl=v;onAnyChange();}}
 function actF(id,v){const a=acts.find(x=>x.id===id);if(a){a.familie=v;renderMix();onAnyChange();}}
 function actT(id,v){const a=acts.find(x=>x.id===id);if(a){a.tarief=v;renderFin();renderCapp();renderMix();renderCap();renderTeam();onAnyChange();}}
 function actD(id,v){const a=acts.find(x=>x.id===id);if(a){a.duur=v;renderMix();renderCap();renderTeam();renderFin();onAnyChange();}}
 function actDD(id,v){const a=acts.find(x=>x.id===id);if(a){a.duurDeclarant=v;renderMix();onAnyChange();}}
 function actDP(id,v){const a=acts.find(x=>x.id===id);if(a){a.duurPersoneel=v;renderMix();onAnyChange();}}
 function actR(id,v){const a=acts.find(x=>x.id===id);if(a){a.routing=v;renderMix();onAnyChange();}}
-function delAct(id){acts=acts.filter(x=>x.id!==id);Object.keys(personMix).forEach(pid=>{personMix[pid]=(personMix[pid]||[]).filter(m=>m.actId!==id);});['personTechnisch','personMDO','personAdmin','personAvond'].forEach(k=>{Object.keys(window[k]).forEach(pid=>{delete window[k][pid][id];});});renderMix();renderFin();renderCapp();renderCap();renderTeam();onAnyChange();}
-function addAct(){const n=document.getElementById('na-naam').value.trim(),f=document.getElementById('na-familie').value,t=+document.getElementById('na-tarief').value||0,d=+document.getElementById('na-duur').value||60;if(!n)return;acts.push({id:nextId('ac'),naam:n,familie:f,tarief:t,duur:d,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'});document.getElementById('na-naam').value='';document.getElementById('na-tarief').value='';document.getElementById('na-duur').value='';renderMix();onAnyChange();}
+function delAct(id){acts=acts.filter(x=>x.id!==id);Object.keys(personMix).forEach(pid=>{personMix[pid]=(personMix[pid]||[]).filter(m=>m.actId!==id);});['personTechnisch','personMDO','personAdmin','personAvond'].forEach(k=>{Object.keys(window[k]).forEach(pid=>{delete window[k][pid][id];});});Object.keys(personActPct).forEach(pid=>{if(personActPct[pid])delete personActPct[pid][id];});renderMix();renderFin();renderCapp();renderCap();renderTeam();onAnyChange();}
+function addAct(){const n=document.getElementById('na-naam').value.trim(),f=document.getElementById('na-familie').value,t=+document.getElementById('na-tarief').value||0,d=+document.getElementById('na-duur').value||60,nom=(document.getElementById('na-nomencl')?.value||'').trim();if(!n)return;acts.push({id:nextId('ac'),naam:n,nomencl:nom,familie:f,tarief:t,duur:d,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'});['na-naam','na-tarief','na-duur','na-nomencl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderMix();onAnyChange();}
 function addMixRow(pid){if(!personMix[pid])personMix[pid]=[];const fc=acts.find(a=>a.familie==='consultatie');personMix[pid].push({actId:fc?fc.id:'',pct:0});renderMix();renderTeam();onAnyChange();}
 function delMixRow(pid,idx){if(!personMix[pid])return;personMix[pid].splice(idx,1);if(personMix[pid].length===0)delete personMix[pid];renderMix();renderFin();renderCap();renderTeam();onAnyChange();}
 function mixActId(pid,idx,v){if(!personMix[pid])return;personMix[pid][idx].actId=v;renderMix();renderFin();renderCap();renderTeam();onAnyChange();}
