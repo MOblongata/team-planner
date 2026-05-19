@@ -343,10 +343,8 @@ td input:focus{outline:none;border-color:#4f46e5;background:#fff;}
       <span style="font-size:11px;color:#9ca3af">Manuele override:</span>
       <input type="number" id="capp-overschot-manual" placeholder="auto" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;padding:4px 7px;font-size:13px" oninput="onCappChange()">
     </div>
-    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7c3aed;margin-right:5px;vertical-align:middle"></span>Laag 1 — Espresso<small>Aanwezigheidspunten (blokken)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l1" value="30" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
-    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:5px;vertical-align:middle"></span>Laag 2 — Melk<small>Relatieve bezetting (max ratio 1,25)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l2" value="30" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
-    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#d97706;margin-right:5px;vertical-align:middle"></span>Laag 3 — Schuim<small>Mandaten &amp; expertise</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l3" value="20" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
-    <div class="layer-cfg"><div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c2410c;margin-right:5px;vertical-align:middle"></span>Laag 4 — Kaneel<small>Solidariteit (max % van lagen 1+2+3)</small></div><input type="number" class="layer-cfg-input" id="capp-pct-l4cap" value="20" min="0" max="100" oninput="onCappChange()"><span class="layer-cfg-unit">%</span></div>
+    <div id="capp-lagen-sliders" style="margin-bottom:8px"></div>
+    <p class="note" id="capp-lagen-tot" style="margin-top:4px"></p>
     <div id="capp-pool-bar" style="margin-top:12px"></div>
   </div>
   <div class="card"><div class="card-title">Mandaten &amp; Expertise (laag 3) <span id="mdt-totaal" style="float:right;font-size:11px;color:#9ca3af">—</span></div><table><thead><tr><th>Mandaat / credential</th><th style="width:200px">Punten (totaal 30)</th><th style="width:30px"></th></tr></thead><tbody id="mandaten-tbody"></tbody></table><div class="add-row"><div><label>Omschrijving</label><input type="text" id="nm-naam" placeholder="Nieuw mandaat" style="width:200px"></div><button class="btn btn-primary" onclick="addMandaat()">+ Toevoegen</button></div><p class="note" style="margin-top:6px">Sliders zijn gekoppeld: totaal blijft 30 punten. Verhoog er één → de andere dalen evenredig.</p></div>
@@ -436,7 +434,8 @@ const DEFAULT_OPLEIDINGEN=[
   {id:'op3',naam:'Manama',punten:12},
   {id:'op4',naam:'Medische eindverantwoordelijkheid',punten:6},
 ];
-const DEFAULT_CAPP={pctL1:30,pctL2:30,pctL3:20,pctL4cap:20,overschotManual:''};
+const DEFAULT_CAPP={pctL1:30,pctL2:30,pctL3:20,pctL4:16,pctL5:4,overschotManual:''};
+const CAPP_LAAG_KEYS=['pctL1','pctL2','pctL3','pctL4','pctL5'];
 const DEFAULT_MDO_CONFIG={blokUren:2,mdoPerUur:3};
 const DEFAULT_ACTS=[
   {id:'ac1',naam:'Consultatie 60 min',familie:'consultatie',tarief:130,duur:60,duurDeclarant:null,duurPersoneel:null,routing:'afdracht'},
@@ -530,7 +529,7 @@ function renderScenariosList(){
 function copyJSON(){const ta=document.getElementById('modal-json');ta.select();try{document.execCommand('copy');}catch(e){navigator.clipboard&&navigator.clipboard.writeText(ta.value);}document.getElementById('copy-confirm').style.display='block';}
 
 function getOverlegFromDOM(){const g=id=>+(document.getElementById(id)?.value)||0;return{opstart:g('p-opstart')||15,ntraject:g('p-ntraject')||2,mintraject:g('p-mintraject')||15,mdofreq:g('p-mdofreq')||5,mdomin:g('p-mdomin')||15,trajlen:g('p-trajlen')||20,consdur:g('p-consdur')||60};}
-function getCappFromDOM(){return{pctL1:+(document.getElementById('capp-pct-l1')?.value)||30,pctL2:+(document.getElementById('capp-pct-l2')?.value)||30,pctL3:+(document.getElementById('capp-pct-l3')?.value)||20,pctL4cap:+(document.getElementById('capp-pct-l4cap')?.value)||20,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
+function getCappFromDOM(){return{pctL1:+cappData.pctL1||0,pctL2:+cappData.pctL2||0,pctL3:+cappData.pctL3||0,pctL4:+cappData.pctL4||0,pctL5:+cappData.pctL5||0,overschotManual:document.getElementById('capp-overschot-manual')?.value||''};}
 function buildState(){return{version:7,savedAt:new Date().toISOString(),team:JSON.parse(JSON.stringify(team)),slots:JSON.parse(JSON.stringify(slots)),kostenData:JSON.parse(JSON.stringify(kostenData)),huisvesting:JSON.parse(JSON.stringify(huisvesting)),investeringen:JSON.parse(JSON.stringify(investeringen)),mandaten:JSON.parse(JSON.stringify(mandaten)),opleidingen:JSON.parse(JSON.stringify(opleidingen)),personMandaten:JSON.parse(JSON.stringify(personMandaten)),personOpleiding:JSON.parse(JSON.stringify(personOpleiding)),werkelijkeCons:JSON.parse(JSON.stringify(werkelijkeCons)),cappData:getCappFromDOM(),overleg:getOverlegFromDOM(),bureauLimit:bureauLim(),acts:JSON.parse(JSON.stringify(acts)),personMix:JSON.parse(JSON.stringify(personMix)),personTechnisch:JSON.parse(JSON.stringify(personTechnisch)),personMDO:JSON.parse(JSON.stringify(personMDO)),personAdmin:JSON.parse(JSON.stringify(personAdmin)),personAvond:JSON.parse(JSON.stringify(personAvond)),mdoConfig:JSON.parse(JSON.stringify(mdoConfig)),mdoBookings:JSON.parse(JSON.stringify(mdoBookings)),mdoBlokken:JSON.parse(JSON.stringify(mdoBlokken)),cappOptIn:JSON.parse(JSON.stringify(cappOptIn)),overlegOhActief:overlegOhActief,cappKostendekking:cappKostendekking,personActPct:JSON.parse(JSON.stringify(personActPct))};}
 function applyState(st){
   team=(st.team||DEFAULT_TEAM.map(p=>({...p}))).map(p=>({type:'zelfstandige',...p}));
@@ -554,7 +553,18 @@ function applyState(st){
   mandaten=st.mandaten||DEFAULT_MANDATEN.map(m=>({...m}));normalizeMandaten();
   opleidingen=st.opleidingen||DEFAULT_OPLEIDINGEN.map(o=>({...o}));normalizeOpleidingen();
   personMandaten=st.personMandaten||{};personOpleiding=st.personOpleiding||{};werkelijkeCons=st.werkelijkeCons||{};
-  cappData={...DEFAULT_CAPP,...(st.cappData||{})};
+  // Migratie: oude pctL4cap (cap-percentage) → omzetten naar absolute pctL4 + pctL5 (reserve)
+  const oldCp=st.cappData||{};
+  if(oldCp.pctL4cap!==undefined&&oldCp.pctL4===undefined){
+    const a=+oldCp.pctL1||30,b=+oldCp.pctL2||30,c=+oldCp.pctL3||20,cap=+oldCp.pctL4cap||20;
+    const d=cap*(a+b+c)/100,e=Math.max(0,100-a-b-c-d);
+    cappData={pctL1:a,pctL2:b,pctL3:c,pctL4:d,pctL5:e,overschotManual:oldCp.overschotManual||''};
+  } else {
+    cappData={...DEFAULT_CAPP,...oldCp};
+  }
+  // Normaliseer: lagen samen = 100%
+  const totL=CAPP_LAAG_KEYS.reduce((s,k)=>s+(+cappData[k]||0),0);
+  if(totL>0.01&&Math.abs(totL-100)>0.1){const f=100/totL;CAPP_LAAG_KEYS.forEach(k=>cappData[k]=(+cappData[k]||0)*f);}
   acts=(st.acts||DEFAULT_ACTS.map(a=>({...a}))).map(a=>({routing:'afdracht',nomencl:'',...a}));
   personMix=st.personMix||{};personTechnisch=st.personTechnisch||{};
   personMDO=st.personMDO||{};personAdmin=st.personAdmin||{};personAvond=st.personAvond||{};
@@ -569,7 +579,7 @@ function applyState(st){
   Object.entries(ov).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});
   if(st.bureauLimit){const bl=document.getElementById('bureau-limit');if(bl)bl.value=st.bureauLimit;}
   const sc=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
-  sc('capp-pct-l1',cappData.pctL1);sc('capp-pct-l2',cappData.pctL2);sc('capp-pct-l3',cappData.pctL3);sc('capp-pct-l4cap',cappData.pctL4cap);sc('capp-overschot-manual',cappData.overschotManual||'');
+  sc('capp-overschot-manual',cappData.overschotManual||'');
   recomputeIdCtr();
 }
 function lsAutoSave(){try{localStorage.setItem(LS_KEY,JSON.stringify(buildState()));}catch(e){}}
@@ -578,7 +588,7 @@ function setStatus(t,c){const el=document.getElementById('save-status');if(el){e
 function onAnyChange(){lsAutoSave();setStatus('✓ Opgeslagen','saved');}
 function exportJSON(){document.getElementById('modal-json').value=JSON.stringify(buildState(),null,2);openModal();}
 function importJSON(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{applyState(JSON.parse(e.target.result));refreshAll();lsAutoSave();setStatus('✓ Geladen','saved');}catch(err){alert('Fout: '+err.message);}};r.readAsText(f);inp.value='';}
-function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));opleidingen=DEFAULT_OPLEIDINGEN.map(o=>({...o}));personMandaten={};personOpleiding={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;cappKostendekking=false;personActPct={};finExpanded={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;['capp-pct-l1','capp-pct-l2','capp-pct-l3','capp-pct-l4cap'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[30,30,20,20][i];});const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
+function resetConfirm(){if(!confirm('Alles resetten naar standaard?'))return;team=DEFAULT_TEAM.map(p=>({...p}));slots={};team.forEach(p=>slots[p.id]=mkDef());kostenData=DEFAULT_KOSTEN.map(k=>({...k}));huisvesting={...DEFAULT_HUISVESTING};investeringen=DEFAULT_INVESTERINGEN.map(i=>({...i}));mandaten=DEFAULT_MANDATEN.map(m=>({...m}));opleidingen=DEFAULT_OPLEIDINGEN.map(o=>({...o}));personMandaten={};personOpleiding={};werkelijkeCons={};cappData={...DEFAULT_CAPP};mdoConfig={...DEFAULT_MDO_CONFIG};mdoBookings=[];mdoBlokken={};cappOptIn={};overlegOhActief=true;cappKostendekking=false;personActPct={};finExpanded={};acts=DEFAULT_ACTS.map(a=>({...a}));personMix={};personTechnisch={};personMDO={};personAdmin={};personAvond={};Object.entries(DEFAULT_OVERLEG).forEach(([k,v])=>{const el=document.getElementById('p-'+k);if(el)el.value=v;});const bl=document.getElementById('bureau-limit');if(bl)bl.value=8;const om=document.getElementById('capp-overschot-manual');if(om)om.value='';refreshAll();lsAutoSave();setStatus('↺ Reset','saved');}
 
 function clr(i){return COLORS[i%COLORS.length];}
 function fmt(n){return'€\u202F'+Math.round(n).toLocaleString('nl-BE');}
@@ -766,7 +776,7 @@ function cappPool(){
 function calcCapp(){
   const pool=cappPool(),dln=team.filter(p=>isCappOptIn(p)&&dagdelen(p)>0);
   if(!dln.length)return null;
-  const pL1=(+(document.getElementById('capp-pct-l1')?.value)||30)/100,pL2=(+(document.getElementById('capp-pct-l2')?.value)||30)/100,pL3=(+(document.getElementById('capp-pct-l3')?.value)||20)/100,pL4cap=(+(document.getElementById('capp-pct-l4cap')?.value)||20)/100,pL4=pL4cap*(pL1+pL2+pL3);
+  const pL1=(+cappData.pctL1||0)/100,pL2=(+cappData.pctL2||0)/100,pL3=(+cappData.pctL3||0)/100,pL4=(+cappData.pctL4||0)/100;
   const dd=dln.map(p=>dagdelen(p)),totDD=dd.reduce((s,x)=>s+x,0);
   const L1=dd.map(x=>totDD?(x/totDD)*pL1*pool:0);
   const verwacht=dln.map(p=>dagdelen(p)*p.cons*wkPerMaand(p)),werkelijk=dln.map(p=>+(werkelijkeCons[p.id]||0));
@@ -1144,9 +1154,36 @@ function renderCapp(){
     bh+='<div style="display:flex;justify-content:space-between;padding:5px 0 0;margin-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:'+(pool>0?'#059669':'#dc2626')+'"><span>Totaal pool</span><span>'+fmt(pool)+(pool<=0?' ⚠️':'')+'</span></div></div>';
     bd.innerHTML=bh;
   }
-  const pL1=(+(document.getElementById('capp-pct-l1')?.value)||30)/100,pL2=(+(document.getElementById('capp-pct-l2')?.value)||30)/100,pL3=(+(document.getElementById('capp-pct-l3')?.value)||20)/100,pL4cap=(+(document.getElementById('capp-pct-l4cap')?.value)||20)/100,pL4=pL4cap*(pL1+pL2+pL3),pRes=Math.max(0,1-pL1-pL2-pL3-pL4);
+  const pL1=(+cappData.pctL1||0)/100,pL2=(+cappData.pctL2||0)/100,pL3=(+cappData.pctL3||0)/100,pL4=(+cappData.pctL4||0)/100,pL5=(+cappData.pctL5||0)/100;
+  // Sliders renderen
+  const lagenEl=document.getElementById('capp-lagen-sliders');
+  if(lagenEl){
+    const lagen=[
+      {k:'pctL1',naam:'Laag 1 — Espresso',sub:'Aanwezigheidspunten (blokken)',kleur:'#7c3aed'},
+      {k:'pctL2',naam:'Laag 2 — Melk',sub:'Relatieve bezetting (ratio max 1,25)',kleur:'#2563eb'},
+      {k:'pctL3',naam:'Laag 3 — Schuim',sub:'Mandaten & expertise',kleur:'#d97706'},
+      {k:'pctL4',naam:'Laag 4 — Kaneel',sub:'Opleidingsniveau & verantwoordelijkheid',kleur:'#c2410c'},
+      {k:'pctL5',naam:'Laag 5 — Reserve',sub:'Opbouw VZW-reserve (niet uitgekeerd)',kleur:'#94a3b8'}
+    ];
+    lagenEl.innerHTML=lagen.map(L=>{
+      const v=+cappData[L.k]||0;
+      return '<div class="layer-cfg">'
+        +'<div class="layer-cfg-label"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+L.kleur+';margin-right:5px;vertical-align:middle"></span>'+L.naam+'<small>'+L.sub+'</small></div>'
+        +'<div style="display:flex;align-items:center;gap:6px;min-width:170px">'
+          +'<input type="range" min="0" max="100" step="0.5" value="'+v.toFixed(1)+'" '
+          +'oninput="document.getElementById(\'capp-lag-lbl-'+L.k+'\').textContent=(+this.value).toFixed(1)+\'%\'" '
+          +'onchange="setCappLaagPctLocked(\''+L.k+'\',+this.value)" '
+          +'style="flex:1;cursor:pointer;accent-color:'+L.kleur+';min-width:90px">'
+          +'<span id="capp-lag-lbl-'+L.k+'" style="font-weight:700;color:'+L.kleur+';min-width:46px;text-align:right;font-size:11.5px">'+v.toFixed(1)+'%</span>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+  }
+  const totLagen=CAPP_LAAG_KEYS.reduce((s,k)=>s+(+cappData[k]||0),0);
+  const lagenTotEl=document.getElementById('capp-lagen-tot');
+  if(lagenTotEl)lagenTotEl.innerHTML='Som lagen: <strong style="color:'+(Math.abs(totLagen-100)<0.5?'#059669':'#dc2626')+'">'+totLagen.toFixed(1)+'%</strong> / 100% — sliders gekoppeld, verhoog er één → de andere dalen evenredig.';
   const barEl=document.getElementById('capp-pool-bar');
-  if(barEl)barEl.innerHTML='<div class="capp-layer-bar"><div class="capp-l1" style="width:'+pL1*100+'%"></div><div class="capp-l2" style="width:'+pL2*100+'%"></div><div class="capp-l3" style="width:'+pL3*100+'%"></div><div class="capp-l4" style="width:'+pL4*100+'%"></div><div class="capp-res" style="width:'+pRes*100+'%"></div></div><div class="capp-legend"><div class="capp-leg"><div class="capp-sq capp-l1"></div>L1 '+fmt(pL1*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l2"></div>L2 '+fmt(pL2*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l3"></div>L3 '+fmt(pL3*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l4"></div>L4 '+fmt(pL4*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-res"></div>Reserve '+fmt(pRes*pool)+'</div></div>';
+  if(barEl)barEl.innerHTML='<div class="capp-layer-bar"><div class="capp-l1" style="width:'+pL1*100+'%"></div><div class="capp-l2" style="width:'+pL2*100+'%"></div><div class="capp-l3" style="width:'+pL3*100+'%"></div><div class="capp-l4" style="width:'+pL4*100+'%"></div><div class="capp-res" style="width:'+pL5*100+'%"></div></div><div class="capp-legend"><div class="capp-leg"><div class="capp-sq capp-l1"></div>L1 '+fmt(pL1*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l2"></div>L2 '+fmt(pL2*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l3"></div>L3 '+fmt(pL3*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-l4"></div>L4 '+fmt(pL4*pool)+'</div><div class="capp-leg"><div class="capp-sq capp-res"></div>L5 Reserve '+fmt(pL5*pool)+'</div></div>';
   const mdtSum=mandaten.reduce((s,m)=>s+(+m.punten||0),0);
   const mdtTot=document.getElementById('mdt-totaal');
   if(mdtTot)mdtTot.innerHTML='Totaal: <strong style="color:'+(Math.abs(mdtSum-MANDAAT_TOT_PTN)<0.5?'#059669':'#dc2626')+'">'+mdtSum.toFixed(1)+'</strong> / 30';
@@ -1409,6 +1446,17 @@ function setRatioSlider(pid,ratio){
   onAnyChange();
 }
 function onCappChange(){renderCapp();onAnyChange();}
+function setCappLaagPctLocked(field,newVal){
+  if(!CAPP_LAAG_KEYS.includes(field))return;
+  newVal=Math.max(0,Math.min(100,+newVal||0));
+  cappData[field]=newVal;
+  const others=CAPP_LAAG_KEYS.filter(k=>k!==field);
+  const sumOthers=others.reduce((s,k)=>s+(+cappData[k]||0),0);
+  const targetOthers=100-newVal;
+  if(sumOthers>0.001){const f=targetOthers/sumOthers;others.forEach(k=>cappData[k]=Math.max(0,(+cappData[k]||0)*f));}
+  else if(targetOthers>0){const each=targetOthers/others.length;others.forEach(k=>cappData[k]=each);}
+  renderCapp();onAnyChange();
+}
 function toggleCappKostendekking(active){cappKostendekking=!!active;renderCapp();renderFin();onAnyChange();}
 function toggleSlot(pid,di,bi){if(!slots[pid])slots[pid]=mkDef();slots[pid][di][bi]=!slots[pid][di][bi];renderRooster();renderFin();renderCapp();renderMix();renderCap();onAnyChange();}
 function addPersoon(){const n=document.getElementById('nh-naam').value.trim();if(!n)return;const id=nextId('tp'),t=document.getElementById('nh-type').value||'zelfstandige';const pctStr=document.getElementById('nh-pct').value;const pct=pctStr===''||pctStr==null?20:+pctStr;team.push({id,naam:n,type:t,tarief:+document.getElementById('nh-tarief').value||80,cons:+document.getElementById('nh-cons').value||4,pct:pct,wkjr:+document.getElementById('nh-wkjr').value||46});slots[id]=mkDef();['nh-naam','nh-tarief','nh-cons','nh-pct','nh-wkjr'].forEach(x=>document.getElementById(x).value='');refreshAll();onAnyChange();}
